@@ -17,6 +17,7 @@ class AIMDBlock(object):
         self.qmmethod=qmmethod
         self.qmbasis=qmbasis
         self.addkw=addkw
+        self.qmmem=qmmem
         self.atombondnumber=atombondnumber
         self.logfile=logfile
 
@@ -46,7 +47,7 @@ class AIMDBlock(object):
                 typenumber[atomtype[atomnumber]]+=1
             else:
                 typenumber[atomtype[atomnumber]]=1
-        name="".join([key+(str(value) if value>1 else "") for key,value in typenumber.items()])                
+        name="".join([key+(str(value) if value>1 else "") for key,value in typenumber.items()])
         return name
 
     def readpdb(self,pdbfilename):
