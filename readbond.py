@@ -8,10 +8,10 @@ import sys
 import os
 
 class AIMDBlock(object):
-    def __init__(self,nproc_sum,nproc,r,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber,logfile):
+    def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber,logfile):
         self.nproc_sum=nproc_sum
         self.nproc=nproc
-        self.r=r
+        self.cutoff=cutoff
         self.xyzfilename=xyzfilename
         self.pdbfilename=pdbfilename
         self.qmmethod=qmmethod
@@ -23,10 +23,10 @@ class AIMDBlock(object):
 
     def run(self):
         os.system('obabel -ixyz '+self.xyzfilename+' -opdb -O '+self.pdbfilename+' > /dev/null')
-        g16commands=self.readbond(nproc=self.nproc,pdbfilename=self.pdbfilename,r=self.r,qmmethod=self.qmmethod,qmbasis=self.qmbasis,addkw=self.addkw,qmmem=self.qmmem,atombondnumber=self.atombondnumber,logfile=self.logfile)
+        g16commands=self.readbond()
         n=self.nproc_sum//self.nproc
         os.system('Nproc='+str(n)+';Pfifo=/tmp/$$.fifo;mkfifo $Pfifo;exec 6<>$Pfifo;rm -f $Pfifo;for ((i=1;i<=$Nproc;i++));do echo;done >&6;'+''.join(['read -u6 ; { '+g16command +' ; echo >&6; }&' for g16command in g16commands])+'wait;exec 6>&-')
-        self.takeforce(g16=g16commands,logfile=self.logfile)
+        self.takeforce(g16=g16commands)
 
     def mo(self,i,bond,molecule,done,bondlist): #connect molecule
         molecule.append(i)
@@ -50,11 +50,11 @@ class AIMDBlock(object):
         name="".join([key+(str(value) if value>1 else "") for key,value in typenumber.items()])
         return name
 
-    def readpdb(self,pdbfilename):
+    def readpdb(self):
         bond={}
         atomtype={}
         atomxyz={}
-        with open(pdbfilename) as f:
+        with open(self.pdbfilename) as f:
             for line in f:
                 if line.startswith("HETATM") or line.startswith("ATOM"):
                     s=line.split()
@@ -76,9 +76,9 @@ class AIMDBlock(object):
                 d[molid]=(self.printmoleculename(mole,atomtype),mole,bondlist)
         return d,atomtype,atomxyz
 
-    def printgjf(self,nproc,jobname,xyzoutput,bondoutput,S,qmmethod,qmbasis,addkw,qmmem):
+    def printgjf(self,jobname,xyzoutput,S):
         with open(jobname+".gjf",'w') as f:
-            print("%nproc="+str(nproc)+"\n%mem="+qmmem+"\n# force "+qmmethod+"/"+qmbasis+" "+addkw+"\n\n"+jobname+"\n\n0 "+str(S),file=f)
+            print("%nproc="+str(self.nproc)+"\n%mem="+self.qmmem+"\n# force "+self.qmmethod+"/"+self.qmbasis+" "+self.addkw+"\n\n"+jobname+"\n\n0 "+str(S),file=f)
             print("\n".join(xyzoutput),file=f)
             print("",file=f)
 
@@ -96,39 +96,34 @@ class AIMDBlock(object):
                 xyzoutput.append(" "+type+" "+str(x)+" "+str(y)+" "+str(z))
         return xyzoutput,atomindex,atomnumber
 
-    def printmol(self,nproc,d,atomtype,atomxyz,atombondnumber,qmmethod,qmbasis,addkw,qmmem):
+    def printmol(self,d,atomtype,atomxyz):
         Smol={}
         g16=[]
-        for molid,molecule in d.items():
-            moleculename,atoms,bonds=molecule
+        for molid,(moleculename,atoms,bonds) in d.items():
             jobname="mol"+str(molid)
             xyzoutput,atomindex,atomnumber=self.getxyz(atoms,atomtype,atomxyz,jobname)
-            bondoutput=[" "+str(x+1) for x in range(atomnumber)]
             bondnumber=[0 for x in range(atomnumber)]
             for bond in bonds:
-                bondoutput[atomindex[bond[0]]-1]+=" "+str(atomindex[bond[1]])+" "+str(bond[2])
-                bondnumber[atomindex[bond[0]]-1]+=bond[2]
-                bondnumber[atomindex[bond[1]]-1]+=bond[2]
+                for i in range(2):
+                    bondnumber[atomindex[bond[i]]-1]+=bond[2]
             S=1
             for atom,index in atomindex.items():
-                S+=atombondnumber[atomtype[atom]]-bondnumber[index-1]
+                S+=self.atombondnumber[atomtype[atom]]-bondnumber[index-1]
             S= 3 if moleculename=="O2" else (2 if S%2==0 else 1)
             Smol[molid]=S
-            self.printgjf(nproc,jobname,xyzoutput,bondoutput,S,qmmethod,qmbasis,addkw,qmmem)
+            self.printgjf(jobname,xyzoutput,S)
             g16.append("g16 "+jobname+".gjf")
         return Smol,g16
 
-    def printtb(self,nproc,d,atomtype,atomxyz,Smol,r,qmmethod,qmbasis,addkw,qmmem):
+    def printtb(self,d,atomtype,atomxyz,Smol):
         g16=[]
-        for molid1,molecule1 in d.items():
-            moleculename1,atoms1,bonds1=molecule1
-            for molid2,molecule2 in d.items():
-                moleculename2,atoms2,bonds2=molecule2
+        for molid1,(moleculename1,atoms1,bonds1) in d.items():
+            for molid2,(moleculename2,atoms2,bonds2) in d.items():
                 if molid1>=molid2:
                     continue
                 for atom1 in atoms1:
                     for atom2 in atoms2:
-                        if np.sum(np.square(atomxyz[atom1]-atomxyz[atom2]))<=r**2:
+                        if np.linalg.norm(atomxyz[atom1]-atomxyz[atom2])<=self.cutoff:
                             break
                     else:
                         continue
@@ -139,24 +134,21 @@ class AIMDBlock(object):
                 bonds=bonds1+bonds2
                 jobname="tb"+str(molid1)+"-"+str(molid2)
                 xyzoutput,atomindex,atomnumber=self.getxyz(atoms,atomtype,atomxyz,jobname)
-                bondoutput=[" "+str(x+1) for x in range(atomnumber)]
-                for bond in bonds:
-                    bondoutput[atomindex[bond[0]]-1]+=" "+str(atomindex[bond[1]])+" "+str(bond[2])
                 S=Smol[molid1]+Smol[molid2]-1
                 S=2 if S%2==0 else 1
                 for molid in (molid1,molid2):
                     if Smol[molid]==3:
                         S+=2
-                self.printgjf(nproc,jobname,xyzoutput,bondoutput,S,qmmethod,qmbasis,addkw,qmmem)
+                self.printgjf(jobname,xyzoutput,S)
                 g16.append("g16 "+jobname+".gjf")
         return g16
 
-    def readbond(self,nproc,pdbfilename,r,qmmethod,qmbasis,addkw,qmmem,atombondnumber,logfile):
-        d,atomtype,atomxyz=self.readpdb(pdbfilename)
-        Smol,g16mol=self.printmol(nproc,d,atomtype,atomxyz,atombondnumber,qmmethod=qmmethod,qmbasis=qmbasis,addkw=addkw,qmmem=qmmem)
-        with open(logfile,'a') as f:
+    def readbond(self):
+        d,atomtype,atomxyz=self.readpdb()
+        Smol,g16mol=self.printmol(d,atomtype,atomxyz)
+        with open(self.logfile,'a') as f:
             print("Total S",sum(Smol.values())-len(Smol)+1,file=f)
-        g16tb=self.printtb(nproc,d,atomtype,atomxyz,Smol,r=r,qmmethod=qmmethod,qmbasis=qmbasis,addkw=addkw,qmmem=qmmem)
+        g16tb=self.printtb(d,atomtype,atomxyz,Smol)
         return g16mol+g16tb
 
     def readforce(self,jobname):
@@ -182,7 +174,7 @@ class AIMDBlock(object):
                         atoms[int(d[s[0]])]=np.array([float(x) for x in s[2:5]])
         return atoms
 
-    def takeforce(self,g16,logfile):
+    def takeforce(self,g16):
         atomforce={}
         i=0
         while "g16 mol"+str(i+1)+".gjf" in g16:
@@ -204,7 +196,7 @@ class AIMDBlock(object):
             finalforce=force+twobodyforce[atom] if atom in twobodyforce else force
             print ("".join("%16.9f"%x for x in finalforce))
             finalforces.append(finalforce)
-        with open(logfile,'a') as f:
+        with open(self.logfile,'a') as f:
             forcesum=np.sum(finalforces,axis=0)
             print("".join("%16.9f"%x for x in forcesum),file=f,end='')
             forcesumdis=np.sqrt(np.sum(np.square(forcesum)))
@@ -232,4 +224,4 @@ if __name__ == '__main__':
     pdbfilename=xyzfilename+".pdb"
     atombondnumber={"C":4,"H":1,"O":2}
     qmproc,qmmethod,qmbasis,addkw,dl,qmmem=readmfccin(mfccinfilename="mfcc.in")
-    AIMDBlock(nproc_sum=int(sys.argv[1]),nproc=qmproc,r=dl,xyzfilename=xyzfilename,pdbfilename=pdbfilename,qmmethod=qmmethod,qmbasis=qmbasis,addkw=addkw,qmmem=qmmem,atombondnumber=atombondnumber,logfile="force.log").run()
+    AIMDBlock(nproc_sum=int(sys.argv[1]),nproc=qmproc,cutoff=dl,xyzfilename=xyzfilename,pdbfilename=pdbfilename,qmmethod=qmmethod,qmbasis=qmbasis,addkw=addkw,qmmem=qmmem,atombondnumber=atombondnumber,logfile="force.log").run()
