@@ -6,6 +6,7 @@
 import numpy as np
 import sys
 import os
+from GaussianRunner import GaussianRunner
 
 class AIMDBlock(object):
     def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber,logfile):
@@ -24,8 +25,7 @@ class AIMDBlock(object):
     def run(self):
         os.system('obabel -ixyz '+self.xyzfilename+' -opdb -O '+self.pdbfilename+' > /dev/null')
         g16commands=self.readbond()
-        n=self.nproc_sum//self.nproc
-        os.system('Nproc='+str(n)+';Pfifo=/tmp/$$.fifo;mkfifo $Pfifo;exec 6<>$Pfifo;rm -f $Pfifo;for ((i=1;i<=$Nproc;i++));do echo;done >&6;'+''.join(['read -u6 ; { '+g16command +' ; echo >&6; }&' for g16command in g16commands])+'wait;exec 6>&-')
+        GaussianRunner(command='g16',cpu_num=self.nproc_sum,nproc=self.nproc).runGaussianInParallel('gjf',g16commands)
         self.takeforce(g16=g16commands)
 
     def mo(self,i,bond,molecule,done,bondlist): #connect molecule
@@ -112,7 +112,7 @@ class AIMDBlock(object):
             S= 3 if moleculename=="O2" else (2 if S%2==0 else 1)
             Smol[molid]=S
             self.printgjf(jobname,xyzoutput,S)
-            g16.append("g16 "+jobname+".gjf")
+            g16.append(jobname+".gjf")
         return Smol,g16
 
     def printtb(self,d,atomtype,atomxyz,Smol):
@@ -140,7 +140,7 @@ class AIMDBlock(object):
                     if Smol[molid]==3:
                         S+=2
                 self.printgjf(jobname,xyzoutput,S)
-                g16.append("g16 "+jobname+".gjf")
+                g16.append(jobname+".gjf")
         return g16
 
     def readbond(self):
@@ -177,7 +177,7 @@ class AIMDBlock(object):
     def takeforce(self,g16):
         atomforce={}
         i=0
-        while "g16 mol"+str(i+1)+".gjf" in g16:
+        while "mol"+str(i+1)+".gjf" in g16:
             i+=1
             forces=self.readforce("mol"+str(i))
             for atom,force in forces.items():
@@ -186,7 +186,7 @@ class AIMDBlock(object):
         twobodyforce={}
         for i in range(1,n+1):
             for j in range(i+1,n+1):
-                if not ("g16 tb"+str(i)+"-"+str(j)+".gjf" in g16):
+                if not ("tb"+str(i)+"-"+str(j)+".gjf" in g16):
                     continue
                 forces=self.readforce("tb"+str(i)+"-"+str(j))
                 for atom,force in forces.items():

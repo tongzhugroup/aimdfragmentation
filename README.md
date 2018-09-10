@@ -1,6 +1,10 @@
 # AIMD's Block Calculation Study
 Ab Initio Molecular Dynamics (AIMD) method's block calculation study.
 
+# Requirements
+* [numpy](https://github.com/numpy/numpy)
+* [GaussianRunner](https://github.com/njzjz/GaussianRunner)
+
 ## Installation
 ### Build from source
 You should install [Gaussian 16](http://gaussian.com/gaussian16/) and [OpenBabel](http://openbabel.org) first. Then build AIMDBlock:
