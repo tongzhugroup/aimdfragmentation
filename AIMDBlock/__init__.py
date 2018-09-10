@@ -6,7 +6,7 @@
 import numpy as np
 import sys
 import os
-from GaussianRunner import GaussianRunner
+from GaussianRunner import GaussianRunner,GaussianAnalyst
 
 class AIMDBlock(object):
     def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber,logfile):
@@ -155,23 +155,12 @@ class AIMDBlock(object):
         d={}
         with open(jobname+".id") as f:
             for line in f:
-                s=line.split()
-                d[s[0]]=s[1]
-        with open(jobname+".log") as f:
-            b =False
-            atoms={}
-            for line in f:
-                if "Forces (Hartrees/Bohr)" in line:
-                    b=True
-                    i=0
-                    continue
-                if b:
-                    i+=1
-                    if i>2:
-                        if line.startswith(" ------------"):
-                            break
-                        s=line.split()
-                        atoms[int(d[s[0]])]=np.array([float(x) for x in s[2:5]])
+                index,atomid=(int(x) for x in line.split())
+                d[index]=atomid
+        forces=GaussianAnalyst(properties=['force']).readFromLOG(jobname+'.log')['force']
+        atoms={}
+        for index,force in forces.items():
+            atoms[d[index]]=force
         return atoms
 
     def takeforce(self,g16):
