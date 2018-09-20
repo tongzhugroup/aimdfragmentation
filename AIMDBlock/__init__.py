@@ -9,7 +9,7 @@ import os
 from GaussianRunner import GaussianRunner,GaussianAnalyst
 
 class AIMDBlock(object):
-    def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber,logfile):
+    def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber,logfile,outputfile="force.dat"):
         self.nproc_sum=nproc_sum
         self.nproc=nproc
         self.cutoff=cutoff
@@ -21,6 +21,7 @@ class AIMDBlock(object):
         self.qmmem=qmmem
         self.atombondnumber=atombondnumber
         self.logfile=logfile
+        self.outputfile=outputfile
 
     def run(self):
         os.system('obabel -ixyz '+self.xyzfilename+' -opdb -O '+self.pdbfilename+' > /dev/null')
@@ -181,10 +182,11 @@ class AIMDBlock(object):
                 for atom,force in forces.items():
                     twobodyforce[atom]=twobodyforce[atom]+force-atomforce[atom] if atom in twobodyforce else force-atomforce[atom]
         finalforces=[]
-        for atom,force in sorted(atomforce.items(),key=lambda item:item[0]):
-            finalforce=force+twobodyforce[atom] if atom in twobodyforce else force
-            print ("".join("%16.9f"%x for x in finalforce))
-            finalforces.append(finalforce)
+        with open(self.outputfile,'w') as f:
+            for atom,force in sorted(atomforce.items(),key=lambda item:item[0]):
+                finalforce=force+twobodyforce[atom] if atom in twobodyforce else force
+                print ("".join("%16.9f"%x for x in finalforce),file=f)
+                finalforces.append(finalforce)
         with open(self.logfile,'a') as f:
             forcesum=np.sum(finalforces,axis=0)
             print("".join("%16.9f"%x for x in forcesum),file=f,end='')
