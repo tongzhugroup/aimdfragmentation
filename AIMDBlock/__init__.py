@@ -161,7 +161,7 @@ class AIMDBlock(object):
         forces=GaussianAnalyst(properties=['force']).readFromLOG(jobname+'.log')['force']
         atoms={}
         for index,force in forces.items():
-            atoms[d[index]]=force
+            atoms[d[index]]=np.array(force)
         return atoms
 
     def takeforce(self,g16):

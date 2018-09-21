@@ -1,6 +1,6 @@
 from setuptools import setup
 setup(name='AIMDBlock',
-      version='1.0.3',
+      version='1.0.4',
       description='AIMD Block Calculation',
       keywords="AIMD block",
       url='https://github.com/njzjz/AIMD-Block-Calculation',
