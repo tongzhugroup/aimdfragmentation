@@ -1,4 +1,4 @@
-from AIMDBlock import AIMDFragmentation
+from AIMDFragmentation import AIMDFragmentation
 AIMDFragmentation(  nproc_sum=28,
             nproc=4,
             cutoff=2.0,

@@ -2,7 +2,7 @@
 # Add root of readbond.py to PATH
 # Usage:
 # readbond.py 28 xxx.xyz
-from AIMDBlock import AIMDFragmentation
+from AIMDFragmentation import AIMDFragmentation
 import time
 import logging
 import sys

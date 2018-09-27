@@ -6,6 +6,10 @@ A automated fragmentation method for Ab Initio Molecular Dynamics (AIMD).
 * [GaussianRunner](https://github.com/njzjz/GaussianRunner)
 
 ## Installation
+### Using pip
+```sh
+$ pip install AIMDFragmentation
+```
 ### Build from source
 You should install [Gaussian 16](http://gaussian.com/gaussian16/) and [OpenBabel](http://openbabel.org) first. Then build AIMDBlock:
 ```sh

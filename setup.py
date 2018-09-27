@@ -6,5 +6,5 @@ setup(name='AIMDFragmentation',
       url='https://github.com/njzjz/AIMDFragmentation',
       author='Jinzhe Zeng',
       author_email='jzzeng@stu.ecnu.edu.cn',
-      packages=['AIMDFragmentation'],
+      packages=['AIMDFragmentation','AIMDBlock'],
       install_requires=['numpy','GaussianRunner'])
