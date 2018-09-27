@@ -1,5 +1,5 @@
-from AIMDBlock import AIMDBlock
-AIMDBlock(  nproc_sum=28,
+from AIMDBlock import AIMDFragmentation
+AIMDFragmentation(  nproc_sum=28,
             nproc=4,
             cutoff=2.0,
             xyzfilename="ch4.xyz",

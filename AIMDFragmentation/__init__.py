@@ -8,7 +8,7 @@ import sys
 import os
 from GaussianRunner import GaussianRunner,GaussianAnalyst
 
-class AIMDBlock(object):
+class AIMDFragmentation(object):
     def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber,logfile,outputfile="force.dat"):
         self.nproc_sum=nproc_sum
         self.nproc=nproc
@@ -194,6 +194,8 @@ class AIMDBlock(object):
             print("%16.9f"%forcesumdis,file=f)
             print("\n",file=f)
 
+AIMDBlock=AIMDFragmentation            
+
 def readmfccin(mfccinfilename="mfcc.in"):
     glb={}
     loc={}
@@ -215,4 +217,4 @@ if __name__ == '__main__':
     pdbfilename=xyzfilename+".pdb"
     atombondnumber={"C":4,"H":1,"O":2}
     qmproc,qmmethod,qmbasis,addkw,dl,qmmem=readmfccin(mfccinfilename="mfcc.in")
-    AIMDBlock(nproc_sum=int(sys.argv[1]),nproc=qmproc,cutoff=dl,xyzfilename=xyzfilename,pdbfilename=pdbfilename,qmmethod=qmmethod,qmbasis=qmbasis,addkw=addkw,qmmem=qmmem,atombondnumber=atombondnumber,logfile="force.log").run()
+    AIMDFragmentation(nproc_sum=int(sys.argv[1]),nproc=qmproc,cutoff=dl,xyzfilename=xyzfilename,pdbfilename=pdbfilename,qmmethod=qmmethod,qmbasis=qmbasis,addkw=addkw,qmmem=qmmem,atombondnumber=atombondnumber,logfile="force.log").run()

@@ -1,10 +1,10 @@
 from setuptools import setup
-setup(name='AIMDBlock',
-      version='1.0.3',
-      description='AIMD Block Calculation',
-      keywords="AIMD block",
-      url='https://github.com/njzjz/AIMD-Block-Calculation',
+setup(name='AIMDFragmentation',
+      version='1.0.4',
+      description='AIMD Fragmentation Calculation',
+      keywords="AIMD Fragmentation",
+      url='https://github.com/njzjz/AIMDFragmentation',
       author='Jinzhe Zeng',
-      author_email='njzjz@qq.com',
-      packages=['AIMDBlock'],
+      author_email='jzzeng@stu.ecnu.edu.cn',
+      packages=['AIMDFragmentation'],
       install_requires=['numpy','GaussianRunner'])

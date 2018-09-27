@@ -1,5 +1,5 @@
-# AIMD's Block Calculation Study
-Ab Initio Molecular Dynamics (AIMD) method's block calculation study.
+# Automated Fragmentation AIMD Calculation
+A automated fragmentation method for Ab Initio Molecular Dynamics (AIMD).
 
 # Requirements
 * [numpy](https://github.com/numpy/numpy)
@@ -9,8 +9,8 @@ Ab Initio Molecular Dynamics (AIMD) method's block calculation study.
 ### Build from source
 You should install [Gaussian 16](http://gaussian.com/gaussian16/) and [OpenBabel](http://openbabel.org) first. Then build AIMDBlock:
 ```sh
-$ git clone https://github.com/njzjz/MDDatasetMaker.git
-$ cd MDDatasetMaker/
+$ git clone https://github.com/njzjz/AIMDFragmentation.git
+$ cd AIMDFragmentation/
 $ python3 setup.py install
 ```
 ## Examples

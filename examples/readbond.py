@@ -2,7 +2,7 @@
 # Add root of readbond.py to PATH
 # Usage:
 # readbond.py 28 xxx.xyz
-from AIMDBlock import AIMDBlock
+from AIMDBlock import AIMDFragmentation
 import time
 import logging
 import sys
@@ -29,6 +29,6 @@ if __name__ == '__main__':
     pdbfilename=xyzfilename+".pdb"
     atombondnumber={"C":4,"H":1,"O":2}
     qmproc,qmmethod,qmbasis,addkw,dl,qmmem=readmfccin(mfccinfilename="mfcc.in")
-    AIMDBlock(nproc_sum=int(sys.argv[1]),nproc=qmproc,cutoff=dl,xyzfilename=xyzfilename,pdbfilename=pdbfilename,qmmethod=qmmethod,qmbasis=qmbasis,addkw=addkw,qmmem=qmmem,atombondnumber=atombondnumber,logfile="force.log").run()
+    AIMDFragmentation(nproc_sum=int(sys.argv[1]),nproc=qmproc,cutoff=dl,xyzfilename=xyzfilename,pdbfilename=pdbfilename,qmmethod=qmmethod,qmbasis=qmbasis,addkw=addkw,qmmem=qmmem,atombondnumber=atombondnumber,logfile="force.log").run()
     time2=time.time()
     logging.warning("Time consumed: "+str(time2-time1))
