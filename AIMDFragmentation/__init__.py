@@ -9,7 +9,7 @@ import os
 from GaussianRunner import GaussianRunner,GaussianAnalyst
 
 class AIMDFragmentation(object):
-    def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber,logfile,outputfile="force.dat"):
+    def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber,logfile,outputfile="force.dat",unit=1):
         self.nproc_sum=nproc_sum
         self.nproc=nproc
         self.cutoff=cutoff
@@ -22,6 +22,7 @@ class AIMDFragmentation(object):
         self.atombondnumber=atombondnumber
         self.logfile=logfile
         self.outputfile=outputfile
+        self.unit=unit
 
     def run(self):
         os.system('obabel -ixyz '+self.xyzfilename+' -opdb -O '+self.pdbfilename+' > /dev/null')
@@ -185,6 +186,7 @@ class AIMDFragmentation(object):
         with open(self.outputfile,'w') as f:
             for atom,force in sorted(atomforce.items(),key=lambda item:item[0]):
                 finalforce=force+twobodyforce[atom] if atom in twobodyforce else force
+                finalforce*=self.unit
                 print ("".join("%16.9f"%x for x in finalforce),file=f)
                 finalforces.append(finalforce)
         with open(self.logfile,'a') as f:
@@ -194,7 +196,7 @@ class AIMDFragmentation(object):
             print("%16.9f"%forcesumdis,file=f)
             print("\n",file=f)
 
-AIMDBlock=AIMDFragmentation            
+AIMDBlock=AIMDFragmentation
 
 def readmfccin(mfccinfilename="mfcc.in"):
     glb={}
