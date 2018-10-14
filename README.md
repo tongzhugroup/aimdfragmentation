@@ -23,15 +23,9 @@ $ cd AIMDFragmentation/
 $ python setup.py install
 ```
 ## Example
-### Run a command directly
-Add the directory of [examples/readbond.py](examples/readbond.py) into PATH and run [readbond.py](examples/readbond.py) directly:
-```sh
-readbond.py 28 ch4.xyz
-```
-Forces of [ch4.xyz](examples/ch4.xyz) will be calculated.
 
 ### Run a Python program
-Or you can see [examples/example.py](examples/example.py) as an example, and run with:
+You can see [examples/example.py](examples/example.py) as an example, and run with:
 ```sh
 python3 example.py
 ```
