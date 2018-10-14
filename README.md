@@ -7,7 +7,9 @@ A automated fragmentation method for Ab Initio Molecular Dynamics (AIMD).
 **Email**: jzzeng@stu.ecnu.edu.cn
 
 ## Requirements
+* [OpenBabel](https://github.com/openbabel/openbabel)
 * [numpy](https://github.com/numpy/numpy)
+* [ASE](https://gitlab.com/ase/ase)
 * [GaussianRunner](https://github.com/njzjz/GaussianRunner)
 
 ## Installation
