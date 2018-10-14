@@ -142,7 +142,7 @@ class AIMDFragmentation(object):
                     forces=self.readforce("tb"+str(i)+"-"+str(j))
                     for atom,force in forces.items():
                         twobodyforce[atom]=twobodyforce[atom]+force-atomforce[atom]
-        finalforces=onebody+twobodyforces
+        finalforces=onebodyforce+twobodyforce
         finalforces*=self.unit
         with open(self.outputfile,'w') as f:
             for finalforce in finalforces:
