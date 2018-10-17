@@ -70,17 +70,38 @@ class AIMDFragmentation(object):
                 d.append(molecule)
         self.mols=d
 
-    def printgjf(self,jobname,selected_atoms,S):
-        selected_atoms.wrap(center=selected_atoms[0].position/selected_atoms.get_cell_lengths_and_angles()[0:3],pbc=selected_atoms.get_pbc())
+    def printgjf(self,jobname,selected_atoms1,S1,selected_atoms2=None,S2=None):
+        selected_atoms1.wrap(center=selected_atoms1[0].position/selected_atoms1.get_cell_lengths_and_angles()[0:3],pbc=selected_atoms1.get_pbc())
         if not os.path.exists(self.gaussian_dir):
             os.makedirs(self.gaussian_dir)
         with open(os.path.join(self.gaussian_dir,jobname+".gjf"),'w') as f:
-            print("%nproc="+str(self.nproc),file=f)
-            print("%mem="+self.qmmem,file=f)
-            print("#","force",self.qmmethod+"/"+self.qmbasis,self.addkw+"\n\n"+jobname+"\n\n0",S,file=f)
-            for atom in selected_atoms:
-                print(atom.symbol,*atom.position,file=f)
-            print("",file=f)
+            if not selected_atoms2:
+                print("%nproc="+str(self.nproc),file=f)
+                print("%mem="+self.qmmem,file=f)
+                print("#","force",self.qmmethod+"/"+self.qmbasis,self.addkw+"\n\n"+jobname+"\n\n0",S1,file=f)
+                for atom in selected_atoms1:
+                    print(atom.symbol,*atom.position,file=f)
+                print("",file=f)
+            else:
+                if S1>S2:
+                    S2*=-1
+                else:
+                    S1*=-1
+                Stotal=S1+S2+1
+                print("%chk="+os.path.join(self.gaussian_dir,jobname+".chk"),file=f)
+                print("%nproc="+str(self.nproc),file=f)
+                print("%mem="+self.qmmem,file=f)
+                print("#",self.qmmethod+"/"+self.qmbasis,"guess=fragment=2",self.addkw+"\n\n"+jobname+"\n\n0",Stotal,0,S1,0,S2,file=f)
+                for index,selected_atoms in enumerate((selected_atoms1,selected_atoms2),start=1):
+                    for atom in selected_atoms:
+                        print(atom.symbol+"(Fragment="+str(index)+")",*atom.position,file=f)
+                print("",file=f)
+                print("--link1--",file=f)
+                print("%chk="+os.path.join(self.gaussian_dir,jobname+".chk"),file=f)
+                print("%nproc="+str(self.nproc),file=f)
+                print("%mem="+self.qmmem,file=f)
+                print("#",self.qmmethod+"/"+self.qmbasis,"guess=read","geom=chk","force",self.addkw+"\n\n"+jobname+"\n\n0",Stotal,0,S1,0,S2,file=f)
+                print("",file=f)
 
     def printmol(self):
         self.Smol=[]
@@ -99,16 +120,11 @@ class AIMDFragmentation(object):
         for molid1,atoms1 in enumerate(self.mols,1):
             for molid2,atoms2 in enumerate(self.mols[molid1:],molid1+1):
                 if np.min(get_distances(self.atoms[atoms1].positions,self.atoms[atoms2].positions,cell=self.atoms.get_cell(),pbc=self.atoms.get_pbc())[1])<=self.cutoff:
-                    atoms=atoms1+atoms2
                     jobname=self.getjobname(molid1,molid2)
-                    self.atomid[jobname]=atoms
-                    selected_atoms=self.atoms[atoms]
-                    S=self.Smol[molid1-1]+self.Smol[molid2-1]-1
-                    S=2 if S%2==0 else 1
-                    for molid in (molid1,molid2):
-                        if self.Smol[molid-1]==3:
-                            S+=2
-                    self.printgjf(jobname,selected_atoms,S)
+                    self.atomid[jobname]=atoms1+atoms2
+                    selected_atoms1,selected_atoms2=self.atoms[atoms1],self.atoms[atoms2]
+                    S1,S2=self.Smol[molid1-1],self.Smol[molid2-1]
+                    self.printgjf(jobname,selected_atoms1,S1,selected_atoms2,S2)
                     self.jobs.append(jobname)
 
     def readbond(self):
