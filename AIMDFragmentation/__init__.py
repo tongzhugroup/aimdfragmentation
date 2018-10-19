@@ -78,20 +78,16 @@ class AIMDFragmentation(object):
             if not selected_atoms2:
                 print("%nproc="+str(self.nproc),file=f)
                 print("%mem="+self.qmmem,file=f)
-                print("#","force",self.qmmethod+"/"+self.qmbasis,self.addkw+"\n\n"+jobname+"\n\n0",S1,file=f)
+                print("#","force",self.qmmethod+"/"+self.qmbasis,self.addkw,"\n\n",jobname,"\n\n",0,S1,file=f)
                 for atom in selected_atoms1:
                     print(atom.symbol,*atom.position,file=f)
                 print("",file=f)
             else:
-                if S1>S2:
-                    S2*=-1
-                else:
-                    S1*=-1
-                Stotal=S1+S2+1
+                Stotal=S1+S2-1  # positive
                 print("%chk="+os.path.join(self.gaussian_dir,jobname+".chk"),file=f)
                 print("%nproc="+str(self.nproc),file=f)
                 print("%mem="+self.qmmem,file=f)
-                print("#",self.qmmethod+"/"+self.qmbasis,"guess=fragment=2",self.addkw+"\n\n"+jobname+"\n\n0",Stotal,0,S1,0,S2,file=f)
+                print("#",self.qmmethod+"/"+self.qmbasis,"guess=fragment=2",self.addkw,"\n\n",jobname,"\n\n",0,Stotal,0,S1,0,S2,file=f)
                 for index,selected_atoms in enumerate((selected_atoms1,selected_atoms2),start=1):
                     for atom in selected_atoms:
                         print(atom.symbol+"(Fragment="+str(index)+")",*atom.position,file=f)
@@ -100,7 +96,7 @@ class AIMDFragmentation(object):
                 print("%chk="+os.path.join(self.gaussian_dir,jobname+".chk"),file=f)
                 print("%nproc="+str(self.nproc),file=f)
                 print("%mem="+self.qmmem,file=f)
-                print("#",self.qmmethod+"/"+self.qmbasis,"guess=read","geom=chk","force",self.addkw+"\n\n"+jobname+"\n\n0",Stotal,0,S1,0,S2,file=f)
+                print("#",self.qmmethod+"/"+self.qmbasis,"guess=read","geom=chk","force",self.addkw,"\n\n",jobname,"\n\n",0,Stotal,0,S1,0,S2,file=f)
                 print("",file=f)
 
     def printmol(self):
