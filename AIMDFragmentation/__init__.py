@@ -4,9 +4,10 @@ import sys, os, time
 from GaussianRunner import GaussianRunner,GaussianAnalyst
 from ase.io import read as readxyz
 from ase.geometry import get_distances
+import subprocess
 
 class AIMDFragmentation(object):
-    def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber={"C":4,"H":1,"O":2},logfile="force.log",outputfile="force.dat",unit=1,pbc=False,cell=[0,0,0],gaussian_dir="gaussian_files"):
+    def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber={"C":4,"H":1,"O":2},logfile="force.log",outputfile="force.dat",unit=1,pbc=False,cell=[0,0,0],gaussian_dir="gaussian_files",command="g16",gaussiancommand=None,jobfile="gaussianjobs"):
         self.nproc_sum=nproc_sum
         self.nproc=nproc
         self.cutoff=cutoff
@@ -26,11 +27,23 @@ class AIMDFragmentation(object):
         self.atomid={}
         self.jobs=[]
         self.gaussian_dir=gaussian_dir
+        self.errorfiles=[]
+        self.command=command
+        self.gaussiancommand=gaussiancommand
+        self.jobfile=jobfile
 
     def run(self):
         self.readbond()
-        GaussianRunner(command='g16',cpu_num=self.nproc_sum,nproc=self.nproc).runGaussianInParallel('gjf',[os.path.join(self.gaussian_dir,job+".gjf") for job in self.jobs])
+        self.rungaussian()
         self.takeforce()
+
+    def rungaussian(self):
+        if not gaussiancommand:
+            GaussianRunner(command=self.command,cpu_num=self.nproc_sum,nproc=self.nproc).runGaussianInParallel('gjf',[os.path.join(self.gaussian_dir,job+".gjf") for job in self.jobs])
+        else:
+            with open(self.jobfile,'w') as f:
+                print(*[os.path.join(self.gaussian_dir,job+".gjf") for job in self.jobs],file=f)
+            os.popen(gaussiancommand.split())
 
     def logging(self,*message):
         if not self.openlogfile:
@@ -137,8 +150,12 @@ class AIMDFragmentation(object):
     def readforce(self,jobname):
         forces=GaussianAnalyst(properties=['force']).readFromLOG(os.path.join(self.gaussian_dir,jobname+'.log'))['force']
         atoms={}
-        for index,force in forces.items():
-            atoms[self.atomid[jobname][index-1]]=np.array(force)
+        if forces:
+            for index,force in forces.items():
+                atoms[self.atomid[jobname][index-1]]=np.array(force)
+        else:
+            self.logging('WARNING:','Ignore',jobname,'because of no forces found.')
+            self.errorfiles.append(os.path.join(self.gaussian_dir,jobname+'.log'))
         return atoms
 
     def takeforce(self):
