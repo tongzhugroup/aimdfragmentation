@@ -2,6 +2,7 @@
 import numpy as np
 import sys, os, time
 from GaussianRunner import GaussianRunner,GaussianAnalyst
+from ase import Atoms
 from ase.io import read as readxyz
 from ase.geometry import get_distances
 import subprocess as sp
@@ -88,29 +89,13 @@ class AIMDFragmentation(object):
         if not os.path.exists(self.gaussian_dir):
             os.makedirs(self.gaussian_dir)
         with open(os.path.join(self.gaussian_dir,jobname+".gjf"),'w') as f:
-            if not selected_atoms2:
-                print("%nproc="+str(self.nproc),file=f)
-                print("%mem="+self.qmmem,file=f)
-                print("#","force",self.qmmethod+"/"+self.qmbasis,self.addkw,"\n\n",jobname,"\n\n",0,S1,file=f)
-                for atom in selected_atoms1:
-                    print(atom.symbol,*atom.position,file=f)
-                print("",file=f)
-            else:
-                Stotal=S1+S2-1  # positive
-                print("%chk="+os.path.join(self.gaussian_dir,jobname+".chk"),file=f)
-                print("%nproc="+str(self.nproc),file=f)
-                print("%mem="+self.qmmem,file=f)
-                print("#",self.qmmethod+"/"+self.qmbasis,"guess=fragment=2",self.addkw,"\n\n",jobname,"\n\n",0,Stotal,0,S1,0,S2,file=f)
-                for index,selected_atoms in enumerate((selected_atoms1,selected_atoms2),start=1):
-                    for atom in selected_atoms:
-                        print(atom.symbol+"(Fragment="+str(index)+")",*atom.position,file=f)
-                print("",file=f)
-                print("--link1--",file=f)
-                print("%chk="+os.path.join(self.gaussian_dir,jobname+".chk"),file=f)
-                print("%nproc="+str(self.nproc),file=f)
-                print("%mem="+self.qmmem,file=f)
-                print("#",self.qmmethod+"/"+self.qmbasis,"guess=read","geom=chk","force",self.addkw,"\n\n",jobname,"\n\n",0,Stotal,0,S1,0,S2,file=f)
-                print("",file=f)
+            selected_atoms,Stotal,guesskeyword=(selected_atoms1,S1,"") if not selected_atoms2 else (selected_atoms1+selected_atoms2,S1+S2-1,"guess=mix")
+            print("%nproc="+str(self.nproc),file=f)
+            print("%mem="+self.qmmem,file=f)
+            print("#","force",self.qmmethod+"/"+self.qmbasis,guesskeyword,self.addkw,"\n\n",jobname,"\n\n",0,Stotal,file=f)
+            for atom in selected_atoms:
+                print(atom.symbol,*atom.position,file=f)
+            print("",file=f)
 
     def printmol(self):
         self.Smol=[]
