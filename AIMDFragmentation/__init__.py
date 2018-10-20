@@ -85,11 +85,11 @@ class AIMDFragmentation(object):
         self.mols=d
 
     def printgjf(self,jobname,selected_atoms1,S1,selected_atoms2=None,S2=None):
-        selected_atoms1.wrap(center=selected_atoms1[0].position/selected_atoms1.get_cell_lengths_and_angles()[0:3],pbc=selected_atoms1.get_pbc())
         if not os.path.exists(self.gaussian_dir):
             os.makedirs(self.gaussian_dir)
         with open(os.path.join(self.gaussian_dir,jobname+".gjf"),'w') as f:
             selected_atoms,Stotal,guesskeyword=(selected_atoms1,S1,"") if not selected_atoms2 else (selected_atoms1+selected_atoms2,S1+S2-1,"guess=mix")
+            selected_atoms.wrap(center=selected_atoms[0].position/selected_atoms.get_cell_lengths_and_angles()[0:3],pbc=selected_atoms.get_pbc())
             print("%nproc="+str(self.nproc),file=f)
             print("%mem="+self.qmmem,file=f)
             print("#","force",self.qmmethod+"/"+self.qmbasis,guesskeyword,self.addkw,"\n\n",jobname,"\n\n",0,Stotal,file=f)
