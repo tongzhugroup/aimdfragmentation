@@ -38,12 +38,12 @@ class AIMDFragmentation(object):
         self.takeforce()
 
     def rungaussian(self):
-        if not gaussiancommand:
+        if not self.gaussiancommand:
             GaussianRunner(command=self.command,cpu_num=self.nproc_sum,nproc=self.nproc).runGaussianInParallel('gjf',[os.path.join(self.gaussian_dir,job+".gjf") for job in self.jobs])
         else:
             with open(self.jobfile,'w') as f:
                 print(*[os.path.join(self.gaussian_dir,job+".gjf") for job in self.jobs],file=f)
-            os.popen(gaussiancommand.split())
+            os.popen(self.gaussiancommand.split())
 
     def logging(self,*message):
         if not self.openlogfile:
