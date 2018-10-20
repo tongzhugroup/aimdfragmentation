@@ -4,7 +4,7 @@ import sys, os, time
 from GaussianRunner import GaussianRunner,GaussianAnalyst
 from ase.io import read as readxyz
 from ase.geometry import get_distances
-import subprocess
+import subprocess as sp
 
 class AIMDFragmentation(object):
     def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber={"C":4,"H":1,"O":2},logfile="force.log",outputfile="force.dat",unit=1,pbc=False,cell=[0,0,0],gaussian_dir="gaussian_files",command="g16",gaussiancommand=None,jobfile="gaussianjobs"):
@@ -43,7 +43,7 @@ class AIMDFragmentation(object):
         else:
             with open(self.jobfile,'w') as f:
                 print(*[os.path.join(self.gaussian_dir,job+".gjf") for job in self.jobs],file=f)
-            os.popen(self.gaussiancommand.split())
+            sp.Popen(self.gaussiancommand.split())
 
     def logging(self,*message):
         if not self.openlogfile:
