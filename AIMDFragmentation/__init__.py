@@ -43,7 +43,7 @@ class AIMDFragmentation(object):
         else:
             with open(self.jobfile,'w') as f:
                 print(*[os.path.join(self.gaussian_dir,job+".gjf") for job in self.jobs],file=f)
-            sp.Popen(self.gaussiancommand.split())
+            sp.call(self.gaussiancommand.split())
 
     def logging(self,*message):
         if not self.openlogfile:
