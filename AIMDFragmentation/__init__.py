@@ -6,6 +6,7 @@ from ase import Atoms
 from ase.io import read as readxyz
 from ase.geometry import get_distances
 import subprocess as sp
+from multiprocessing import Pool
 
 class AIMDFragmentation(object):
     def __init__(self,nproc_sum,nproc,cutoff,xyzfilename,pdbfilename,qmmethod,qmbasis,addkw,qmmem,atombondnumber={"C":4,"H":1,"O":2},logfile="force.log",outputfile="force.dat",unit=1,pbc=False,cell=[0,0,0],gaussian_dir="gaussian_files",command="g16",gaussiancommand=None,jobfile="gaussianjobs"):
@@ -22,7 +23,6 @@ class AIMDFragmentation(object):
         self.logfile=logfile
         self.outputfile=outputfile
         self.unit=unit
-        self.openlogfile=False
         self.pbc=pbc
         self.cell=cell
         self.atomid={}
@@ -47,11 +47,10 @@ class AIMDFragmentation(object):
             sp.call(self.gaussiancommand.split())
 
     def logging(self,*message):
-        if not self.openlogfile:
-            self.openlogfile=open(self.logfile,'a')
         localtime = time.asctime( time.localtime(time.time()) )
         print(localtime,'AIMDFragmentation',*message)
-        print(localtime,'AIMDFragmentation',*message,file=self.openlogfile)
+        with open(self.logfile,'a') as f:
+            print(localtime,'AIMDFragmentation',*message,file=f)
 
     def getjobname(self,*molid):
         if len(molid)==1:
@@ -134,28 +133,30 @@ class AIMDFragmentation(object):
 
     def readforce(self,jobname):
         forces=GaussianAnalyst(properties=['force']).readFromLOG(os.path.join(self.gaussian_dir,jobname+'.log'))['force']
-        atoms={}
         if forces:
+            atoms={}
             for index,force in forces.items():
                 atoms[self.atomid[jobname][index-1]]=np.array(force)
+            return atoms,None
         else:
-            self.logging('WARNING:','Ignore',jobname,'because of no forces found.')
-            self.errorfiles.append(os.path.join(self.gaussian_dir,jobname+'.log'))
-        return atoms
+            return None,jobname
 
     def takeforce(self):
-        onebodyforce=np.zeros((self.natom,3))
-        for i in range(1,len(self.mols)+1):
-            forces=self.readforce(self.getjobname(i))
-            for atom,force in forces.items():
-                onebodyforce[atom]=force
-        twobodyforce=np.zeros((self.natom,3))
-        for i in range(1,len(self.mols)+1):
-            for j in range(i+1,len(self.mols)+1):
-                if self.getjobname(i,j) in self.jobs:
-                    forces=self.readforce("tb"+str(i)+"-"+str(j))
-                    for atom,force in forces.items():
-                        twobodyforce[atom]=twobodyforce[atom]+force-onebodyforce[atom]
+        onebodyforce,twobodyforce=np.zeros((self.natom,3)),np.zeros((self.natom,3))
+        with Pool(self.nproc_sum) as pool:
+            onebodyresults=pool.imap(self.readforce,[self.getjobname(i) for i in range(1,len(self.mols)+1)])
+            twobodyresults=pool.imap(self.readforce,[self.getjobname(i,j) for i in range(1,len(self.mols)+1) for j in range(i+1,len(self.mols)+1) if self.getjobname(i,j) in self.jobs])
+            for i,results in enumerate((onebodyresults,twobodyresults)):
+                for atoms,jobname in results:
+                    if atoms:
+                        for atom,force in atoms.items():
+                            if i==0:
+                                onebodyforce[atom]=force
+                            else:
+                                twobodyforce[atom]+=force-onebodyforce[atom]
+                    else:
+                        self.logging('WARNING:','Ignore',jobname,'because of no forces found.')
+                        self.errorfiles.append(os.path.join(self.gaussian_dir,jobname+'.log'))
         finalforces=onebodyforce+twobodyforce
         finalforces*=self.unit
         with open(self.outputfile,'w') as f:
