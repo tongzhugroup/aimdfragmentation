@@ -183,9 +183,12 @@ class AIMDFragmentation(object):
         onebodyforce*=self.unit
         twobodyforce*=self.unit
         finalforces=onebodyforce+twobodyforce
+        # Make the resultant force equal to 0
+        if np.abs(np.sum(finalforces))>0:
+            finalforces-=np.abs(finalforces)/np.sum(np.abs(finalforces),0)*np.sum(finalforces,0)
         np.savetxt(self.outputfile,finalforces,fmt='%16.9f')
         np.savetxt(self.kbodyfile,np.hstack((onebodyforce,twobodyforce)),fmt='%16.9f')
         forcesum=np.sum(finalforces,axis=0)
-        self.logging("Total force:",*("%16.9f"%x for x in forcesum))
+        self.logging("Resultant force:",*("%16.9f"%x for x in forcesum))
         forcesumdis=np.linalg.norm(forcesum)
         self.logging("Magnitude:","%16.9f"%forcesumdis)

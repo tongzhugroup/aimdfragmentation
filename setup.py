@@ -1,6 +1,6 @@
 from setuptools import setup
 setup(name='AIMDFragmentation',
-      version='1.0.18',
+      version='1.0.19',
       description='AIMD Fragmentation Calculation',
       keywords="AIMD Fragmentation",
       url='https://github.com/njzjz/AIMDFragmentation',
