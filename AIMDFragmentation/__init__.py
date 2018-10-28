@@ -138,7 +138,7 @@ class AIMDFragmentation(object):
         if forces:
             atoms={}
             for index,force in forces.items():
-                atoms[self.atomid[jobname][index-1]]=np.array(force)
+                atoms[self.atomid[jobname][index-1]]=np.array(force)*self.unit
             return atoms,None
         else:
             return None,jobname
@@ -180,8 +180,6 @@ class AIMDFragmentation(object):
             if twobodyerroratoms:
                 twobodyforce[twobodyerroratoms]=self.fold[twobodyerroratoms][:,3:6]
                 self.logging("Atom",*twobodyerroratoms,"use(s) the old 2-body forces.")
-        onebodyforce*=self.unit
-        twobodyforce*=self.unit
         finalforces=onebodyforce+twobodyforce
         # Make the resultant force equal to 0
         if np.abs(np.sum(finalforces))>0:
