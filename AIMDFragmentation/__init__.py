@@ -9,6 +9,7 @@ __update__ = "2018-12-14"
 import sys
 import os
 import time
+import itertools
 from collections import Counter
 from multiprocessing import Pool, cpu_count
 import subprocess as sp
@@ -21,7 +22,7 @@ from GaussianRunner import GaussianRunner, GaussianAnalyst
 
 
 class AIMDFragmentation(object):
-    def __init__(self, nproc_sum=None, nproc=4, cutoff=3.5, xyzfilename="comb.xyz", pdbfilename="comb.pdb", qmmethod="mn15", qmbasis="6-31g(d)", addkw="", qmmem="400MW", atombondnumber=None, logfile=None, outputfile="force.dat", unit=1, pbc=False, cell=[0, 0, 0], gaussian_dir="gaussian_files", command="g16", gaussiancommand=None, jobfile="gaussianjobs", onebodykeyword="scf=(xqc,MaxConventionalCycles=256)", twobodykeyword="guess=mix scf=(maxcyc=256)", kbodyfile="kbforce.dat"):
+    def __init__(self, nproc_sum=None, nproc=4, cutoff=3.5, xyzfilename="comb.xyz", pdbfilename="comb.pdb", qmmethod="mn15", qmbasis="6-31g(d)", addkw="", qmmem="400MW", atombondnumber=None, logfile=None, outputfile="force.dat", unit=1, pbc=False, cell=[0, 0, 0], gaussian_dir="gaussian_files", command="g16", gaussiancommand=None, jobfile="gaussianjobs", onebodykeyword="scf=(xqc,MaxConventionalCycles=256)", twobodykeyword="guess=mix scf=(maxcyc=256)", kbodyfile="kbforce.dat", fg=True):
         self.nproc_sum = nproc_sum if nproc_sum else cpu_count()
         self.nproc = nproc
         self.cutoff = cutoff
@@ -45,6 +46,7 @@ class AIMDFragmentation(object):
         self.twobodykeyword = twobodykeyword
         self.kbodyfile = kbodyfile
         self._fold = None
+        self.fg = fg
 
     def run(self):
         self._readbond()
@@ -103,17 +105,39 @@ class AIMDFragmentation(object):
             os.makedirs(self.gaussian_dir)
         buff = []
         # only supported for C, H, and O
-        S = ((3 if atoms.get_chemical_symbols() == ["O", "O"] else (
-            Counter(atoms.get_chemical_symbols())['H'] % 2+1)) for atoms in [self._atoms[atomsid] for atomsid in selected_atomsid])
-        atoms_whole, S_whole, kbodykeyword = self._atoms[sum(selected_atomsid, [])], sum(
-            S)-len(selected_atomsid)+1, (self.onebodykeyword if len(selected_atomsid) == 1 else self.twobodykeyword)
-        atoms_whole.wrap(
-            center=atoms_whole[0].position/atoms_whole.get_cell_lengths_and_angles()[0:3], pbc=atoms_whole.get_pbc())
-        buff.append(
-            f'%nproc={self.nproc}\n%mem={self.qmmem}\n# force {self.qmmethod}/{self.qmbasis} {kbodykeyword} {self.addkw}\n\n{jobname}\n\n0 {S_whole}')
-        buff.extend(("{} {} {} {}".format(atom.symbol, *atom.position)
-                     for atom in atoms_whole))
-        buff.append('\n')
+        selected_atoms = [self._atoms[atomsid] for atomsid in selected_atomsid]
+        multiplicities = list((3 if atoms.get_chemical_symbols() == ["O", "O"] else (
+            Counter(atoms.get_chemical_symbols())['H'] % 2+1)) for atoms in selected_atoms)
+        atoms_whole, multiplicity_whole, kbodykeyword = self._atoms[sum(selected_atomsid, [])], sum(
+            multiplicities)-len(selected_atomsid)+1, (self.onebodykeyword if len(selected_atomsid) == 1 else self.twobodykeyword)
+        nproc = f'%nproc={self.nproc}'
+        title = f'\n{jobname}\n'
+        mem = f'mem={self.qmmem}'
+        if len(selected_atomsid) == 1 or not self.fg:
+            atoms_whole.wrap(
+                center=atoms_whole[0].position/atoms_whole.get_cell_lengths_and_angles()[0:3], pbc=atoms_whole.get_pbc())
+            kw = f'# force {self.qmmethod}/{self.qmbasis} {kbodykeyword} {self.addkw}'
+            buff.extend((nproc, mem, kw, title))
+            buff.append(f'0 {multiplicity_whole}')
+            buff.extend(("{} {} {} {}".format(atom.symbol, *atom.position)
+                         for atom in atoms_whole))
+            buff.append('\n')
+        else:
+            for atoms in selected_atoms:
+                atoms.wrap(center=atoms_whole[0].position/atoms_whole.get_cell_lengths_and_angles()[
+                           0:3], pbc=atoms_whole.get_pbc())
+            chk = f'%chk={os.path.join(self.gaussian_dir, jobname+".chk")}'
+            connect = '\n--link1--\n'
+            kw1 = f'# {self.qmmethod}/{self.qmbasis} {kbodykeyword} {self.addkw} guess=fragment={len(selected_atomsid)}'
+            kw2 = f'# force {self.qmmethod}/{self.qmbasis} {kbodykeyword} {self.addkw} geom=chk guess=read'
+            multiplicities_str = ' '.join(
+                (f'0 {multiplicity}' for multiplicity in itertools.chain((multiplicity_whole,), multiplicities)))
+            buff.extend((chk, nproc, mem, kw1, title, multiplicities_str))
+            for index, atoms in enumerate(selected_atoms, 1):
+                buff.extend(('{}(Fragment={}) {} {} {}'.format(
+                    atom.symbol, index, *atom.position) for atom in atoms))
+            buff.extend((connect, chk, nproc, kw2,
+                         title, multiplicities_str, '\n'))
         with open(os.path.join(self.gaussian_dir, jobname+".gjf"), 'w') as f:
             f.write('\n'.join(buff))
 
