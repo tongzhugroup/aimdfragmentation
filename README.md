@@ -4,6 +4,7 @@
 A automated fragmentation method for Ab Initio Molecular Dynamics (AIMD).
 
 **Author**: Jinzhe Zeng
+
 **Email**: jzzeng@stu.ecnu.edu.cn
 
 ## Requirements

@@ -3,14 +3,15 @@
 
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
-__update__ = "2018-12-14"
+__update__ = "2018-12-28"
 
 
 import sys
 import os
 import time
 import itertools
-from collections import Counter
+from collections import Counter, defaultdict
+from functools import partial
 from multiprocessing import Pool, cpu_count
 import subprocess as sp
 from ase.geometry import get_distances
@@ -22,7 +23,7 @@ from GaussianRunner import GaussianRunner, GaussianAnalyst
 
 
 class AIMDFragmentation(object):
-    def __init__(self, nproc_sum=None, nproc=4, cutoff=3.5, xyzfilename="comb.xyz", pdbfilename="comb.pdb", qmmethod="mn15", qmbasis="6-31g(d)", addkw="", qmmem="400MW", atombondnumber=None, logfile=None, outputfile="force.dat", unit=1, pbc=False, cell=[0, 0, 0], gaussian_dir="gaussian_files", command="g16", gaussiancommand=None, jobfile="gaussianjobs", onebodykeyword="scf=(xqc,MaxConventionalCycles=256)", twobodykeyword="guess=mix scf=(maxcyc=256)", kbodyfile="kbforce.dat", fg=True):
+    def __init__(self, nproc_sum=None, nproc=4, cutoff=3.5, xyzfilename="comb.xyz", pdbfilename="comb.pdb", qmmethod="mn15", qmbasis="6-31g(d)", addkw="", qmmem="400MW", atombondnumber=None, logfile=None, outputfile="force.dat", unit=1, pbc=False, cell=[0, 0, 0], gaussian_dir="gaussian_files", command="g16", gaussiancommand=None, jobfile="gaussianjobs", onebodykeyword="scf=(xqc,MaxConventionalCycles=256)", twobodykeyword="scf=(maxcyc=256)", kbodyfile="kbforce.dat", fg=True, kmax=3):
         self.nproc_sum = nproc_sum if nproc_sum else cpu_count()
         self.nproc = nproc
         self.cutoff = cutoff
@@ -47,6 +48,8 @@ class AIMDFragmentation(object):
         self.kbodyfile = kbodyfile
         self._fold = None
         self.fg = fg
+        self.kmax = kmax
+        self._distances = {}
 
     def run(self):
         self._readbond()
@@ -56,10 +59,10 @@ class AIMDFragmentation(object):
     def _rungaussian(self):
         if not self.gaussiancommand:
             GaussianRunner(command=self.command, cpu_num=self.nproc_sum, nproc=self.nproc).runGaussianInParallel(
-                'gjf', [os.path.join(self.gaussian_dir, job+".gjf") for job in self.jobs])
+                'gjf', [os.path.join(self.gaussian_dir, f"{job}.gjf") for job in self.jobs])
         else:
             with open(self.jobfile, 'w') as f:
-                print(*[os.path.join(self.gaussian_dir, job+".gjf")
+                print(*[os.path.join(self.gaussian_dir, f"{job}.gjf")
                         for job in self.jobs], file=f)
             sp.call(self.gaussiancommand.split())
 
@@ -68,11 +71,8 @@ class AIMDFragmentation(object):
         print(localtime, 'AIMDFragmentation', *message)
 
     def _getjobname(self, *molid):
-        if len(molid) == 1:
-            return f"mol{molid[0]}"
-        elif len(molid) == 2:
-            molid = sorted(molid)
-            return f'tb{molid[0]}-{molid[1]}'
+        molid = sorted(molid)
+        return f'{len(molid)}b{"-".join((str(x) for x in molid))}'
 
     def _mo(self, i, bond, molecule, done):  # connect molecule
         molecule.append(i)
@@ -138,24 +138,27 @@ class AIMDFragmentation(object):
                     atom.symbol, index, *atom.position) for atom in atoms))
             buff.extend((connect, chk, nproc, kw2,
                          title, multiplicities_str, '\n'))
-        with open(os.path.join(self.gaussian_dir, jobname+".gjf"), 'w') as f:
+        with open(os.path.join(self.gaussian_dir, f"{jobname}.gjf"), 'w') as f:
             f.write('\n'.join(buff))
 
-    def _processjob(self, molid, selected_atoms):
-        jobname = self._getjobname(*molid)
+    def _processjob(self, molids):
+        jobname = self._getjobname(*molids)
+        selected_atoms = [self._mols[molid-1] for molid in molids]
         self._atomid[jobname] = sum(selected_atoms, [])
         self._printgjf(jobname, selected_atoms)
         self.jobs.append(jobname)
 
-    def _printmol(self):
-        for molid, atoms in enumerate(self._mols, 1):
-            self._processjob((molid,), (atoms,))
+    def _printkb(self, k):
+        for molids in itertools.combinations(range(1, len(self._mols)+1), k):
+            if all((self._isclose(molida, molidb) for molida, molidb in itertools.combinations(molids, 2))):
+                self._processjob(molids)
 
-    def _printtb(self):
-        for molid1, atoms1 in enumerate(self._mols, 1):
-            for molid2, atoms2 in enumerate(self._mols[molid1:], molid1+1):
-                if np.min(get_distances(self._atoms[atoms1].positions, self._atoms[atoms2].positions, cell=self._atoms.get_cell(), pbc=self._atoms.get_pbc())[1]) <= self.cutoff:
-                    self._processjob((molid1, molid2), (atoms1, atoms2))
+    def _isclose(self, molid1, molid2):
+        name = f'{molid1}-{molid2}'
+        if not name in self._distances:
+            self._distances[name] = np.min(get_distances(self._atoms[self._mols[molid1-1]].positions, self._atoms[self._mols[molid2-1]].positions,
+                                                         cell=self._atoms.get_cell(), pbc=self._atoms.get_pbc())[1]) <= self.cutoff
+        return self._distances[name]
 
     def _readbond(self):
         self._atoms = readxyz(self.xyzfilename)
@@ -163,73 +166,75 @@ class AIMDFragmentation(object):
         self._atoms.set_cell(self.cell)
         self._natom = len(self._atoms)
         self._readpdb()
-        self._printmol()
-        self._printtb()
+        for k in range(1, self.kmax+1):
+            self._printkb(k)
 
-    def _readforce(self, jobname):
+    def _readforce(self, mols):
+        jobname = self._getjobname(*mols)
         forces = GaussianAnalyst(properties=['force']).readFromLOG(
-            os.path.join(self.gaussian_dir, jobname+'.log'))['force']
+            os.path.join(self.gaussian_dir, f'{jobname}.log'))['force']
         if forces:
-            atoms = {}
+            atoms = np.zeros((self._natom, 3))
             for index, force in forces.items():
                 atoms[self._atomid[jobname][index-1]
-                      ] = np.array(force)*self.unit
-            return atoms, None
+                      ] = np.array(force)
+            atoms *= self.unit
+            return atoms, mols
         else:
-            return None, jobname
+            return None, mols
 
     @property
     def fold(self):
         if self._fold is None:
             if os.path.isfile(self.kbodyfile):
                 loadingfold = np.loadtxt(self.kbodyfile)
-                if loadingfold.shape == (self._natom, 6):
+                if loadingfold.shape == (self._natom, 3*self.kmax):
                     self._fold = loadingfold
                     self._logging("Load old forces.")
         if self._fold is None:
-            self._fold = np.zeros((self._natom, 6))
+            self._fold = np.zeros((self._natom, 3*self.kmax))
             self._logging("No old forces found. Use 0 instead.")
         return self._fold
 
     def _takeforce(self):
-        onebodyforce, twobodyforce = np.zeros(
-            (self._natom, 3)), np.zeros((self._natom, 3))
+        kbodyforces = [np.zeros((self._natom, 3)) for x in range(self.kmax)]
+        kbodyerroratoms = [list() for x in range(self.kmax)]
+        molsforces = defaultdict(partial(np.zeros, (self._natom, 3)))
         with Pool(self.nproc_sum) as pool:
-            onebodyresults = pool.imap(
-                self._readforce, [self._getjobname(i) for i in range(1, len(self._mols)+1)])
-            twobodyresults = pool.imap(self._readforce, [self._getjobname(i, j) for i in range(1, len(
-                self._mols)+1) for j in range(i+1, len(self._mols)+1) if self._getjobname(i, j) in self.jobs])
-            twobodyerroratoms = []
-            for i, results in enumerate((onebodyresults, twobodyresults)):
-                for atoms, jobname in results:
-                    if atoms:
-                        for atom, force in atoms.items():
-                            if i == 0:
-                                onebodyforce[atom] = force
-                            else:
-                                twobodyforce[atom] += force-onebodyforce[atom]
+            kbodyresults = [pool.imap(
+                self._readforce, [molids for molids in itertools.combinations(range(1, len(self._mols)+1), i+1) if self._getjobname(*molids) in self.jobs]) for i in range(self.kmax)]
+            for i, results in enumerate(kbodyresults):
+                for force, mols in results:
+                    if not force is None:
+                        molsforces[mols] = force - np.sum((np.sum(
+                            (molsforces[klessmols] for klessmols in itertools.combinations(mols, j)), axis=0) for j in range(i+1)), axis=0)
+                        kbodyforces[i] += molsforces[mols]
                     else:
-                        self._logging('WARNING:', 'No forces of', jobname,
-                                      'found. Use the old forces instead.')
+                        jobname = self._getjobname(*mols)
+                        self._logging(
+                            f'WARNING: No forces of {jobname} found. Use the old forces instead.')
                         self.errorfiles.append(os.path.join(
-                            self.gaussian_dir, jobname+'.log'))
+                            self.gaussian_dir, f'{jobname}.log'))
                         if i == 0:
-                            onebodyforce[self._atomid[jobname]
-                                         ] = self.fold[self._atomid[jobname]][:, 0:3]
+                            kbodyforces[i][self._atomid[jobname]
+                                           ] = self.fold[self._atomid[jobname]][:, 0:3]
                         else:
-                            twobodyerroratoms += self._atomid[jobname]
-            if twobodyerroratoms:
-                twobodyforce[twobodyerroratoms] = self.fold[twobodyerroratoms][:, 3:6]
-                self._logging("Atom", *twobodyerroratoms,
-                              "use(s) the old 2-body forces.")
-        finalforces = onebodyforce+twobodyforce
+                            kbodyerroratoms[i] += self._atomid[jobname]
+            for i in range(1, self.kmax):
+                if kbodyerroratoms[i]:
+                    kbodyforces[i][kbodyerroratoms[i]
+                                   ] = self.fold[kbodyerroratoms[i]][:, 3:6]
+                    self._logging("Atom", *kbodyerroratoms[i],
+                                  f"use(s) the old {i}-body forces.")
+        finalforces = np.sum((kbodyforces[i]
+                              for i in range(self.kmax)), axis=1)
         # Make the resultant force equal to 0
         if np.abs(np.sum(finalforces)) > 0:
             finalforces -= np.abs(finalforces) / \
                 np.sum(np.abs(finalforces), 0)*np.sum(finalforces, 0)
         np.savetxt(self.outputfile, finalforces, fmt='%16.9f')
         np.savetxt(self.kbodyfile, np.hstack(
-            (onebodyforce, twobodyforce)), fmt='%16.9f')
+            (kbodyforces[i] for i in range(self.kmax))), fmt='%16.9f')
         forcesum = np.sum(finalforces, axis=0)
         forcesumdis = np.linalg.norm(forcesum)
         self._logging("Resultant force:", *("%16.9f" % x for x in forcesum))
