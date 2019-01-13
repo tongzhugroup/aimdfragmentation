@@ -7,4 +7,4 @@ setup(name='AIMDFragmentation',
       author='Jinzhe Zeng',
       author_email='jzzeng@stu.ecnu.edu.cn',
       packages=['AIMDFragmentation'],
-      install_requires=['numpy', 'GaussianRunner', 'ase'])
+      install_requires=['numpy', 'gaussianrunner', 'ase'])
