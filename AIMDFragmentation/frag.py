@@ -179,7 +179,7 @@ class AIMDFragmentation(object):
             os.path.join(self.gaussian_dir, f'{jobname}.log'))
         qm_force = results['force']
         qm_energy = results['energy']
-        if qm_force:
+        if not qm_force is None:
             forces = np.zeros((self._natom, 3))
             forces[self._atomid[jobname]] = qm_force
             forces *= self.unit
