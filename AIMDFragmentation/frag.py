@@ -185,8 +185,7 @@ class AIMDFragmentation(object):
             forces *= self.unit
             energy = qm_energy * self.energyunit
             return forces, energy, mols
-        else:
-            return None, None, mols
+        return None, None, mols
 
     @property
     def fold(self):
