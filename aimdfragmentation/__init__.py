@@ -5,7 +5,6 @@ import logging
 import coloredlogs
 from pkg_resources import DistributionNotFound, get_distribution
 
-from .analyst import GaussianAnalyst
 from .frag import AIMDFragmentation
 
 __all__ = ['AIMDFragmentation']
