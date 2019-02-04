@@ -247,7 +247,7 @@ class AIMDFragmentation(object):
                             (np.sum(np.fromiter(
                                 (molsenergies[klessmols]
                                  for klessmols in itertools.combinations(
-                                    mols, j), float)) for j in range(i + 1)))
+                                    mols, j)), float)) for j in range(i + 1)))
                         kbodyforces[i] += molsforces[mols]
                         kbodyenergies[i] += molsenergies[mols]
                     else:
