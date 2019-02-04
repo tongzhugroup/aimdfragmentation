@@ -236,16 +236,16 @@ class AIMDFragmentation(object):
             for i, results in enumerate(kbodyresults):
                 for force, energy, mols in results:
                     if force is not None:
-                        molsforces[mols] = force - np.sum(
-                            (np.sum(
-                                (molsforces[klessmols]
+                        molsforces[mols] = force - np.sum(np.tuple(
+                            np.sum(np.tuple(
+                                molsforces[klessmols]
                                  for klessmols in itertools.combinations(
                                     mols, j)),
                                 axis=0) for j in range(i + 1)),
                             axis=0)
                         molsenergies[mols] = energy - np.sum(
-                            (np.sum(
-                                (molsenergies[klessmols]
+                            (np.sum(np.fromiter(
+                                molsenergies[klessmols]
                                  for klessmols in itertools.combinations(
                                     mols, j))) for j in range(i + 1)))
                         kbodyforces[i] += molsforces[mols]
@@ -276,8 +276,8 @@ class AIMDFragmentation(object):
         np.savetxt(self.outputfile, finalforces, fmt='%16.9f')
         with open(self.outputenergyfile, 'w') as f:
             f.write(f'{finalenergies:16.9f}')
-        np.savetxt(self.kbodyfile, np.hstack(
-            (kbodyforces[i] for i in range(self.kmax))), fmt='%16.9f')
+        np.savetxt(self.kbodyfile, np.hstack(tuple(
+            kbodyforces[i] for i in range(self.kmax))), fmt='%16.9f')
         forcesum = np.sum(finalforces, axis=0)
         forcesumdis = np.linalg.norm(forcesum)
         logging.info(f"Energy: {finalenergies:16.9f}")
