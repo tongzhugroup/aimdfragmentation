@@ -1,5 +1,10 @@
 # Automated Fragmentation AIMD Calculation
-[![python3.6](https://img.shields.io/badge/python-3.6-blue.svg)](https://badge.fury.io/py/AIMDFragmentation)[![pypi](https://badge.fury.io/py/AIMDFragmentation.svg)](https://badge.fury.io/py/AIMDFragmentation)
+
+[![python version](https://img.shields.io/pypi/pyversions/aimdfragmentation.svg?logo=python&logoColor=white)](https://pypi.org/project/aimdfragmentation)
+[![PyPI](https://img.shields.io/pypi/v/aimdfragmentation.svg)](https://pypi.org/project/aimdfragmentation)
+[![Build Status](https://travis-ci.com/njzjz/aimdfragmentation.svg?branch=master)](https://travis-ci.com/njzjz/aimdfragmentation)
+[![Coverage Status](https://coveralls.io/repos/github/njzjz/aimdfragmentation/badge.svg?branch=master)](https://coveralls.io/github/njzjz/aimdfragmentation?branch=master)
+[![codecov](https://codecov.io/gh/njzjz/aimdfragmentation/branch/master/graph/badge.svg)](https://codecov.io/gh/njzjz/aimdfragmentation)
 
 A automated fragmentation method for Ab Initio Molecular Dynamics (AIMD).
 
@@ -14,27 +19,38 @@ A automated fragmentation method for Ab Initio Molecular Dynamics (AIMD).
 * [GaussianRunner](https://github.com/njzjz/GaussianRunner)
 
 ## Installation
+
 ### Using pip
+
 ```sh
-$ pip install AIMDFragmentation
+$ pip install aimdfragmentation
+
 ```
+
 ### Build from source
-You should install [Gaussian 16](http://gaussian.com/gaussian16/) and [OpenBabel](http://openbabel.org) first. Then build AIMDBlock:
+
+You should install [Gaussian 16](http://gaussian.com/gaussian16/) and [OpenBabel](http://openbabel.org) first. Then:
+
 ```sh
-$ git clone https://github.com/njzjz/AIMDFragmentation.git
-$ cd AIMDFragmentation/
-$ python setup.py install
+git clone https://github.com/njzjz/aimdfragmentation
+cd aimdfragmentation/
+pip install .
 ```
+
 ## Example
 
 ### Run a Python program
+
 You can see [examples/example.py](examples/example.py) as an example, and run with:
+
 ```sh
-python3 example.py
+python example.py
 ```
 
 ### Run MD with LAMMPS
+
 See [njzjz/Pyforce](https://github.com/njzjz/Pyforce) repository and install Pyforce module. Then rename [examples/example.py](examples/example.py) as `force.py` and put it where you run LAMMPS. Add a line in the LAMMPS input file:
+
 ```
 fix 1 all pyforce C H O
 ```

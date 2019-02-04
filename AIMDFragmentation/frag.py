@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Fragmentation for AIMD"""
+"""Fragmentation for AIMD."""
 
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
@@ -8,9 +8,9 @@ __date__ = "2018-07-18"
 
 
 import itertools
+import logging
 import os
 import subprocess as sp
-import sys
 import time
 from collections import Counter, defaultdict
 from functools import partial
@@ -18,16 +18,25 @@ from multiprocessing import Pool, cpu_count
 
 import numpy as np
 import openbabel
-from ase import Atoms
 from ase.geometry import get_distances
 from ase.io import read as readxyz
+
 from gaussianrunner import GaussianAnalyst, GaussianRunner
 
 
 class AIMDFragmentation(object):
-    def __init__(self, nproc_sum=None, nproc=4, cutoff=3.5, xyzfilename="comb.xyz", pdbfilename="comb.pdb", qmmethod="mn15", qmbasis="6-31g(d)", addkw="", qmmem="400MW", atombondnumber=None, logfile=None, outputfile="force.dat", outputenergyfile="energy.dat", unit=1, energyunit=1, pbc=False, cell=[0, 0, 0], gaussian_dir="gaussian_files", command="g16", gaussiancommand=None, jobfile="gaussianjobs", onebodykeyword="scf=(xqc,MaxConventionalCycles=256)", twobodykeyword="scf=(maxcyc=256)", kbodyfile="kbforce.dat", fg=True, kmax=3):
+    def __init__(
+            self, nproc_sum=None, nproc=4, cutoff=3.5, xyzfilename="comb.xyz",
+            pdbfilename=None, qmmethod="mn15", qmbasis="6-31g(d)",
+            addkw="", qmmem="400MW", atombondnumber=None, logfile=None,
+            outputfile="force.dat", outputenergyfile="energy.dat", unit=1,
+            energyunit=1, pbc=False, cell=None, gaussian_dir="gaussian_files",
+            command="g16", gaussiancommand=None, jobfile="gaussianjobs",
+            onebodykeyword="scf=(xqc,MaxConventionalCycles=256)",
+            twobodykeyword="scf=(maxcyc=256)", kbodyfile="kbforce.dat",
+            fg=True, kmax=3):
         self.nproc_sum = nproc_sum if nproc_sum else cpu_count()
-        self.nproc = nproc
+        self.nproc = min(nproc, nproc_sum)
         self.cutoff = cutoff
         self.xyzfilename = xyzfilename
         self.qmmethod = qmmethod
@@ -62,17 +71,15 @@ class AIMDFragmentation(object):
 
     def _rungaussian(self):
         if not self.gaussiancommand:
-            GaussianRunner(command=self.command, cpu_num=self.nproc_sum, nproc=self.nproc).runGaussianInParallel(
-                'gjf', [os.path.join(self.gaussian_dir, f"{job}.gjf") for job in self.jobs])
+            GaussianRunner(command=self.command, cpu_num=self.nproc_sum,
+                           nproc=self.nproc).runGaussianInParallel('gjf',
+                                                                   [os.path.join(self.gaussian_dir, f"{job}.gjf")
+                                                                    for job in self.jobs])
         else:
             with open(self.jobfile, 'w') as f:
                 print(*[os.path.join(self.gaussian_dir, f"{job}.gjf")
                         for job in self.jobs], file=f)
             sp.call(self.gaussiancommand.split())
-
-    def _logging(self, *message):
-        localtime = time.asctime(time.localtime(time.time()))
-        print(localtime, 'AIMDFragmentation', *message)
 
     def _getjobname(self, *molid):
         molid = sorted(molid)
@@ -110,8 +117,11 @@ class AIMDFragmentation(object):
         buff = []
         # only supported for C, H, and O
         selected_atoms = [self._atoms[atomsid] for atomsid in selected_atomsid]
-        multiplicities = list((3 if atoms.get_chemical_symbols() == ["O", "O"] else (
-            Counter(atoms.get_chemical_symbols())['H'] % 2+1)) for atoms in selected_atoms)
+        multiplicities = list(
+            (3
+             if atoms.get_chemical_symbols() == ["O", "O"]
+             else(Counter(atoms.get_chemical_symbols())['H'] % 2 + 1))
+            for atoms in selected_atoms)
         atoms_whole, multiplicity_whole, kbodykeyword = self._atoms[sum(selected_atomsid, [])], sum(
             multiplicities)-len(selected_atomsid)+1, (self.onebodykeyword if len(selected_atomsid) == 1 else self.twobodykeyword)
         nproc = f'%nproc={self.nproc}'
@@ -135,7 +145,10 @@ class AIMDFragmentation(object):
             kw1 = f'# {self.qmmethod}/{self.qmbasis} {kbodykeyword} {self.addkw} guess=fragment={len(selected_atomsid)}'
             kw2 = f'# force {self.qmmethod}/{self.qmbasis} {kbodykeyword} {self.addkw} geom=chk guess=read'
             multiplicities_str = ' '.join(
-                (f'0 {multiplicity}' for multiplicity in itertools.chain((multiplicity_whole,), multiplicities)))
+                (f'0 {multiplicity}'
+                 for multiplicity in itertools.chain(
+                     (multiplicity_whole,),
+                     multiplicities)))
             buff.extend((chk, nproc, mem, kw1, title, multiplicities_str))
             for index, atoms in enumerate(selected_atoms, 1):
                 buff.extend(('{}(Fragment={}) {} {} {}'.format(
@@ -154,14 +167,19 @@ class AIMDFragmentation(object):
 
     def _printkb(self, k):
         for molids in itertools.combinations(range(1, len(self._mols)+1), k):
-            if all((self._isclose(molida, molidb) for molida, molidb in itertools.combinations(molids, 2))):
+            if all((self._isclose(molida, molidb) for molida,
+                    molidb in itertools.combinations(molids, 2))):
                 self._processjob(molids)
 
     def _isclose(self, molid1, molid2):
         name = f'{molid1}-{molid2}'
-        if not name in self._distances:
-            self._distances[name] = np.min(get_distances(self._atoms[self._mols[molid1-1]].positions, self._atoms[self._mols[molid2-1]].positions,
-                                                         cell=self._atoms.get_cell(), pbc=self._atoms.get_pbc())[1]) <= self.cutoff
+        if name not in self._distances:
+            self._distances[name] = np.min(
+                get_distances(
+                    self._atoms[self._mols[molid1 - 1]].positions, self.
+                    _atoms[self._mols[molid2 - 1]].positions,
+                    cell=self._atoms.get_cell(),
+                    pbc=self._atoms.get_pbc())[1]) <= self.cutoff
         return self._distances[name]
 
     def _readbond(self):
@@ -179,7 +197,7 @@ class AIMDFragmentation(object):
             os.path.join(self.gaussian_dir, f'{jobname}.log'))
         qm_force = results['force']
         qm_energy = results['energy']
-        if not qm_force is None:
+        if qm_force is not None:
             forces = np.zeros((self._natom, 3))
             forces[self._atomid[jobname]] = qm_force
             forces *= self.unit
@@ -194,10 +212,10 @@ class AIMDFragmentation(object):
                 loadingfold = np.loadtxt(self.kbodyfile)
                 if loadingfold.shape == (self._natom, 3*self.kmax):
                     self._fold = loadingfold
-                    self._logging("Load old forces.")
+                    logging.info("Load old forces.")
         if self._fold is None:
             self._fold = np.zeros((self._natom, 3*self.kmax))
-            self._logging("No old forces found. Use 0 instead.")
+            logging.warn("No old forces found. Use 0 instead.")
         return self._fold
 
     def _takeforce(self):
@@ -207,21 +225,35 @@ class AIMDFragmentation(object):
         molsforces = defaultdict(partial(np.zeros, (self._natom, 3)))
         molsenergies = defaultdict(float)
         with Pool(self.nproc_sum) as pool:
-            kbodyresults = [pool.imap(
-                self._readforce, [molids for molids in itertools.combinations(range(1, len(self._mols)+1), i+1) if self._getjobname(*molids) in self.jobs]) for i in range(self.kmax)]
+            kbodyresults = [
+                pool.imap(
+                    self._readforce,
+                    [molids
+                     for molids in itertools.combinations(
+                         range(1, len(self._mols) + 1),
+                         i + 1) if self._getjobname(*molids) in self.jobs])
+                for i in range(self.kmax)]
             for i, results in enumerate(kbodyresults):
                 for force, energy, mols in results:
-                    if not force is None:
-                        molsforces[mols] = force - np.sum((np.sum(
-                            (molsforces[klessmols] for klessmols in itertools.combinations(mols, j)), axis=0) for j in range(i+1)), axis=0)
-                        molsenergies[mols] = energy - np.sum((np.sum(
-                            (molsenergies[klessmols] for klessmols in itertools.combinations(mols, j))) for j in range(i+1)))
+                    if force is not None:
+                        molsforces[mols] = force - np.sum(
+                            (np.sum(
+                                (molsforces[klessmols]
+                                 for klessmols in itertools.combinations(
+                                    mols, j)),
+                                axis=0) for j in range(i + 1)),
+                            axis=0)
+                        molsenergies[mols] = energy - np.sum(
+                            (np.sum(
+                                (molsenergies[klessmols]
+                                 for klessmols in itertools.combinations(
+                                    mols, j))) for j in range(i + 1)))
                         kbodyforces[i] += molsforces[mols]
                         kbodyenergies[i] += molsenergies[mols]
                     else:
                         jobname = self._getjobname(*mols)
-                        self._logging(
-                            f'WARNING: No forces of {jobname} found. Use the old forces instead.')
+                        logging.warn(
+                            f'No forces of {jobname} found. Use the old forces instead.')
                         self.errorfiles.append(os.path.join(
                             self.gaussian_dir, f'{jobname}.log'))
                         if i == 0:
@@ -233,8 +265,8 @@ class AIMDFragmentation(object):
                 if kbodyerroratoms[i]:
                     kbodyforces[i][kbodyerroratoms[i]
                                    ] = self.fold[kbodyerroratoms[i]][:, 3:6]
-                    self._logging("Atom", *kbodyerroratoms[i],
-                                  f"use(s) the old {i}-body forces.")
+                    logging.info(
+                        f"Atom {' '.join(kbodyerroratoms[i])} use(s) the old {i}-body forces.")
         finalforces = np.sum(kbodyforces, axis=0)
         finalenergies = np.sum(kbodyenergies)
         # Make the resultant force equal to 0
@@ -248,6 +280,6 @@ class AIMDFragmentation(object):
             (kbodyforces[i] for i in range(self.kmax))), fmt='%16.9f')
         forcesum = np.sum(finalforces, axis=0)
         forcesumdis = np.linalg.norm(forcesum)
-        self._logging(f"Energy: {finalenergies:16.9f}")
-        self._logging("Resultant force:", *(f"{x:16.9f}" for x in forcesum))
-        self._logging(f"Magnitude: {forcesumdis:16.9f}")
+        logging.info(f"Energy: {finalenergies:16.9f}")
+        logging.info("Resultant force:", *(f"{x:16.9f}" for x in forcesum))
+        logging.info(f"Magnitude: {forcesumdis:16.9f}")
