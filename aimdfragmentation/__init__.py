@@ -7,7 +7,6 @@ from pkg_resources import DistributionNotFound, get_distribution
 
 from .analyst import GaussianAnalyst
 from .frag import AIMDFragmentation
-from .runner import GaussianRunner
 
 __all__ = ['AIMDFragmentation']
 
