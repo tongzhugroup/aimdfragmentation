@@ -14,7 +14,7 @@ class Test_all(unittest.TestCase):
         if not os.path.exists(folder):
             os.makedirs(folder)
         with open(os.path.join(folder, xyzfilename), 'wb') as f:
-            f.write(pkg_resources.resource_string(__name__, xyzfilename))
+            f.write(pkg_resources.resource_string(__name__, 'test.xyz'))
         af = AIMDFragmentation(cutoff=6.0, xyzfilename=xyzfilename)
         af.run()
         with open(af.outputenergyfile) as f:
