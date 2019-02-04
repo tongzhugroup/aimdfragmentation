@@ -48,7 +48,7 @@ class AIMDFragmentation(object):
         self.unit = unit
         self.energyunit = energyunit
         self.pbc = pbc
-        self.cell = cell
+        self.cell = cell if cell else [0, 0, 0]
         self._atomid = {}
         self.jobs = []
         self.gaussian_dir = gaussian_dir
