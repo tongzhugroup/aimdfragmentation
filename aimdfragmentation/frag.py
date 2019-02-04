@@ -281,5 +281,5 @@ class AIMDFragmentation(object):
         forcesum = np.sum(finalforces, axis=0)
         forcesumdis = np.linalg.norm(forcesum)
         logging.info(f"Energy: {finalenergies:16.9f}")
-        logging.info("Resultant force:", *(f"{x:16.9f}" for x in forcesum))
+        logging.info("Resultant force: {:16.9f} {:16.9f} {:16.9f}".format(*forcesum))
         logging.info(f"Magnitude: {forcesumdis:16.9f}")
