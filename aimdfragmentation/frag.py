@@ -36,7 +36,7 @@ class AIMDFragmentation(object):
             twobodykeyword="scf=(maxcyc=256)", kbodyfile="kbforce.dat",
             fg=True, kmax=3):
         self.nproc_sum = nproc_sum if nproc_sum else cpu_count()
-        self.nproc = min(nproc, nproc_sum)
+        self.nproc = min(nproc, self.nproc_sum)
         self.cutoff = cutoff
         self.xyzfilename = xyzfilename
         self.qmmethod = qmmethod
