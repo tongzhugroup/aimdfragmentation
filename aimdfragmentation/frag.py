@@ -237,7 +237,7 @@ class AIMDFragmentation(object):
                 for force, energy, mols in results:
                     if force is not None:
                         molsforces[mols] = force - np.sum(tuple(
-                            np.sum(np.tuple(
+                            np.sum(tuple(
                                 molsforces[klessmols]
                                  for klessmols in itertools.combinations(
                                     mols, j)),
