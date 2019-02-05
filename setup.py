@@ -9,6 +9,7 @@ if __name__ == '__main__':
     with open(path.join(this_directory, 'docs', 'README.md')) as f:
         long_description = f.read()
 
+    tests_require = ['pytest-sugar', 'pytest-cov']
     setup(name='aimdfragmentation',
           description='AIMD Fragmentation Calculation',
           keywords="AIMD Fragmentation",
@@ -17,7 +18,10 @@ if __name__ == '__main__':
           author_email='jzzeng@stu.ecnu.edu.cn',
           install_requires=['numpy', 'gaussianrunner', 'ase', 'coloredlogs'],
           test_suite='aimdfragmentation.test',
-          tests_require=['pytest-sugar'],
+          tests_require=tests_require,
+          extras_require={
+              "test": tests_require,
+          },
           package_data={'aimdfragmentation': ['test/test.xyz']},
           packages=find_packages(),
           python_requires='~=3.6',
