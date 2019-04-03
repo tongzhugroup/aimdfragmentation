@@ -266,7 +266,7 @@ class AIMDFragmentation(object):
                     kbodyforces[i][kbodyerroratoms[i]
                                    ] = self.fold[kbodyerroratoms[i]][:, 3:6]
                     logging.info(
-                        f"Atom {' '.join(kbodyerroratoms[i])} use(s) the old {i}-body forces.")
+                        f"Atom {' '.join(map(str, kbodyerroratoms[i]))} use(s) the old {i}-body forces.")
         finalforces = np.sum(kbodyforces, axis=0)
         finalenergies = np.sum(kbodyenergies)
         # Make the resultant force equal to 0
