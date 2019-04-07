@@ -16,7 +16,8 @@ if __name__ == '__main__':
           url='https://github.com/njzjz/aimdfragmentation',
           author='Jinzhe Zeng',
           author_email='jzzeng@stu.ecnu.edu.cn',
-          install_requires=['numpy', 'gaussianrunner>=1.0.19', 'ase', 'coloredlogs'],
+          install_requires=[
+              'numpy', 'gaussianrunner>=1.0.19', 'ase', 'coloredlogs'],
           test_suite='aimdfragmentation.test',
           tests_require=tests_require,
           extras_require={
@@ -47,6 +48,6 @@ if __name__ == '__main__':
           zip_safe=True,
           ext_modules=[
               Extension("aimdfragmentation.dps", sources=[
-                  "aimdfragmentation/dps.pyx","aimdfragmentation/c_stack.cpp"], language="c++"),
+                  "aimdfragmentation/dps.pyx", "aimdfragmentation/c_stack.cpp"], language="c++"),
           ],
           )
