@@ -1,15 +1,15 @@
 #include <Python.h>
 
-extern "C"{
+extern "C" {
     class C_Stack {
-        private:
+    private:
         struct Node {
             int val;
             Node* prev;
         };
         Node* tail;
 
-        public:
+    public:
         C_Stack();
 
         ~C_Stack();
