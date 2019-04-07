@@ -1,9 +1,8 @@
-#!/usr/bin/env python3
 """Fragmentation for AIMD."""
 
 __author__ = "Jinzhe Zeng"
 __email__ = "jzzeng@stu.ecnu.edu.cn"
-__update__ = "2019-01-13"
+__update__ = "2019-04-17"
 __date__ = "2018-07-18"
 
 
@@ -20,9 +19,9 @@ import numpy as np
 import openbabel
 from ase.geometry import get_distances
 from ase.io import read as readxyz
-
 from gaussianrunner import GaussianAnalyst, GaussianRunner
 
+from .dps import dps as connectmolecule
 
 class AIMDFragmentation(object):
     def __init__(
@@ -85,14 +84,6 @@ class AIMDFragmentation(object):
         molid = sorted(molid)
         return f'{len(molid)}b{"-".join((str(x) for x in molid))}'
 
-    def _mo(self, i, bond, molecule, done):  # connect molecule
-        molecule.append(i)
-        done[i] = True
-        for b in bond[i]:
-            if not done[b]:
-                molecule, done = self._mo(b, bond, molecule, done)
-        return molecule, done
-
     def _readpdb(self):
         conv = openbabel.OBConversion()
         conv.SetInAndOutFormats('xyz', 'pdb')
@@ -104,12 +95,8 @@ class AIMDFragmentation(object):
             if line.startswith("CONECT"):
                 s = line.split()
                 bond[int(s[1])-1] += [int(x)-1 for x in s[2:]]
-        d, done = [], [False for x in range(self._natom)]
-        for i in range(self._natom):
-            if not done[i]:
-                molecule, done = self._mo(i, bond, [], done)
-                d.append(molecule)
-        self._mols = d
+        # connect molecules
+        self._mols = connectmolecule(bond)
 
     def _printgjf(self, jobname, selected_atomsid):
         if not os.path.exists(self.gaussian_dir):
