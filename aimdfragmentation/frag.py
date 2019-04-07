@@ -23,6 +23,7 @@ from gaussianrunner import GaussianAnalyst, GaussianRunner
 
 from .dps import dps as connectmolecule
 
+
 class AIMDFragmentation(object):
     def __init__(
             self, nproc_sum=None, nproc=4, cutoff=3.5, xyzfilename="comb.xyz",
@@ -226,9 +227,9 @@ class AIMDFragmentation(object):
                         molsforces[mols] = force - np.sum(tuple(
                             np.sum(tuple(
                                 molsforces[klessmols]
-                                 for klessmols in itertools.combinations(
+                                for klessmols in itertools.combinations(
                                     mols, j)),
-                                axis=0) for j in range(i + 1)),
+                                   axis=0) for j in range(i + 1)),
                             axis=0)
                         molsenergies[mols] = energy - np.sum(np.fromiter(
                             (np.sum(np.fromiter(
@@ -268,5 +269,6 @@ class AIMDFragmentation(object):
         forcesum = np.sum(finalforces, axis=0)
         forcesumdis = np.linalg.norm(forcesum)
         logging.info(f"Energy: {finalenergies:16.9f}")
-        logging.info("Resultant force: {:16.9f} {:16.9f} {:16.9f}".format(*forcesum))
+        logging.info(
+            "Resultant force: {:16.9f} {:16.9f} {:16.9f}".format(*forcesum))
         logging.info(f"Magnitude: {forcesumdis:16.9f}")

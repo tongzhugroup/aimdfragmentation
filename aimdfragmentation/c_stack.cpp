@@ -1,5 +1,5 @@
-extern "C"{
-    #include "c_stack.h"
+extern "C" {
+#include "c_stack.h"
 }
 
 C_Stack::C_Stack() {
@@ -10,7 +10,7 @@ C_Stack::C_Stack() {
 
 C_Stack::~C_Stack() {
     Node *t;
-    while(tail!=NULL){
+    while(tail!=NULL) {
         t=tail;
         tail=tail->prev;
         delete t;
