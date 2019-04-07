@@ -1,7 +1,7 @@
 """Use 'pip install .' to install."""
 from os import path
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 
 if __name__ == '__main__':
     print(__doc__)
