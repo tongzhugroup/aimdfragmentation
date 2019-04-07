@@ -1,7 +1,7 @@
 """Use 'pip install .' to install."""
 from os import path
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_packages, Extension
 
 if __name__ == '__main__':
     print(__doc__)
@@ -16,7 +16,8 @@ if __name__ == '__main__':
           url='https://github.com/njzjz/aimdfragmentation',
           author='Jinzhe Zeng',
           author_email='jzzeng@stu.ecnu.edu.cn',
-          install_requires=['numpy', 'gaussianrunner', 'ase', 'coloredlogs'],
+          install_requires=[
+              'numpy', 'gaussianrunner>=1.0.19', 'ase', 'coloredlogs'],
           test_suite='aimdfragmentation.test',
           tests_require=tests_require,
           extras_require={
@@ -26,7 +27,12 @@ if __name__ == '__main__':
           packages=find_packages(),
           python_requires='~=3.6',
           use_scm_version=True,
-          setup_requires=['setuptools_scm', 'pytest-runner'],
+          setup_requires=[
+              'setuptools_scm',
+              'pytest-runner',
+              "setuptools>=18.0",
+              "cython",
+          ],
           long_description=long_description,
           long_description_content_type='text/markdown',
           classifiers=[
@@ -40,4 +46,8 @@ if __name__ == '__main__':
               "Topic :: Software Development :: Version Control :: Git",
           ],
           zip_safe=True,
+          ext_modules=[
+              Extension("aimdfragmentation.dps", sources=[
+                  "aimdfragmentation/dps.pyx", "aimdfragmentation/c_stack.cpp"], language="c++"),
+          ],
           )
