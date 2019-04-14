@@ -5,23 +5,10 @@ sudo: false
 cache: 
   directories:
   - $HOME/.cache/pip
-
+services: docker
 env:
   global:
-    - PYTHON_VERSION=3.7
-    - PIP_DEPENDENCIES="tox-conda"
     - secure: "ryUltJvieQGY43Cd7nmSzKBWEZbywksbPOxJZ7Ig7Y428P8ML9u8zdKd9u2VT6JIdzpcfO0aKLuJfN4x+gL9G6DwJ2zIWDeou7fEcKtTcDc5SmVxhnErTFcgQ+7NTiLS2hufuQVZSpHGQ+GdSaDMa4y0/GRt/yxpKhBMa7dhd5L71hSi0Hs9BH6gJAuNfwaYhMOGy3GVBSvjKKFuH99u5KxaOUJ/R8Dd8evuQh5UgvWT1tpy0boPXCNLOEJbsXZtxqsTwezVoHoFHnuxiIHWABgAVye0DnIwjOCNQyGCey6HGYbKAx+lU7ldwmftEC8Tyody+VCbjz5DScEyxIEOLStzVFD6IFcJ6DgizXAFqZh2CXrBDo2e8IdkWgwZKrfDIh2YQntKc90isPimWamaYxHRh8rLorumWjeSt8D3CjdVoAOinTKLK+W3zK6YFymw1hgfj3h1aGxHBFlcuw4L7CzIc9u4duq5+VUZRQ4qSqPFIddd5N5vE0YBUJKCDm+LIk/YBY9udbM0vJDL4X9sKc02igbY4Mj6nm5TxuYMqHsos0CiDfhUJ8q3JEP6HKXunKIRw/AzF7BayYvVdHeZdSk8g1OhBIy4xi21d9aAs/6UpgTBw8lNVTC+SABtzH0iG574NYI9WmSt5r00qamQSsDnjJjZ5V1eM0LIf3Nk77A="
-
-before_install:
-  - git clone --depth 1 https://github.com/circulosmeos/gdown.pl;
-  - ./gdown.pl/gdown.pl $GAUSSIANURL 'g16.tgz'>/dev/null 2>&1;
-  - tar -xzvf g16.tgz;
-  - export g16root=$(pwd)
-  - source g16/bsd/g16.profile
-
-install:
-  - git clone --depth 1 git://github.com/astropy/ci-helpers.git
-  - source ci-helpers/travis/setup_conda.sh
-
-script:
-  - tox
+before_install: git clone --depth 1 https://github.com/circulosmeos/gdown.pl && ./gdown.pl/gdown.pl $GAUSSIANURL 'g16.tgz'>/dev/null 2>&1 && tar -xzvf g16.tgz;
+install: docker pull continuumio/miniconda3
+script: docker run -i -t -v $(pwd):/project -v ~/.cache/pip:/root/.cache/pip --env-file <(env | grep 'TRAVIS\|CI') continuumio/miniconda3 /bin/bash -c "chown -R root /root/.cache && pip install tox-conda && cd /project && export g16root=/project && source g16/bsd/g16.profile && tox -e py37"
