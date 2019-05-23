@@ -1,25 +1,27 @@
 workflow "Release to pypi" {
   on = "release"
-  resolves = ["upload"]
+  resolves = ["publish"]
 }
 
-action "check" {
-  uses = "ross/python-actions/setup-py/3.7@627646f618c3c572358bc7bc4fc413beb65fa50f"
+action "publish" {
+  uses = "mariamrf/py-package-publish-action@master"
   args = "check"
+  secrets = ["TWINE_PASSWORD", "TWINE_USERNAME"]
+  env = {
+    PYTHON_VERSION = "3.7.3"
+  }
 }
 
-action "sdist" {
-  uses = "ross/python-actions/setup-py/3.7@627646f618c3c572358bc7bc4fc413beb65fa50f"
-  args = "sdist"
-  needs = "check"
+workflow "Test" {
+  on = "push"
+  resolves = ["Tox"]
 }
 
-action "upload" {
-  uses = "ross/python-actions/twine@627646f618c3c572358bc7bc4fc413beb65fa50f"
-  args = "upload ./dist/aimdfragmentation-*.tar.gz"
+action "Tox" {
+  uses = "njzjz/actions/tox-conda@master"
   secrets = [
-    "TWINE_USERNAME",
-    "TWINE_PASSWORD",
+    "COVERALLS_REPO_TOKEN",
+    "CODECOV_TOKEN",
+    "GAUSSIANURL",
   ]
-  needs = "sdist"
 }
