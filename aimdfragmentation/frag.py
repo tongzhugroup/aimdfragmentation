@@ -90,12 +90,12 @@ class AIMDFragmentation(object):
         conv.SetInAndOutFormats('xyz', 'pdb')
         mol = openbabel.OBMol()
         conv.ReadFile(mol, self.xyzfilename)
-        pdbstring = conv.WriteString(mol)
         bond = [[] for x in range(self._natom)]
-        for line in pdbstring.split('\n'):
-            if line.startswith("CONECT"):
-                s = line.split()
-                bond[int(s[1])-1] += [int(x)-1 for x in s[2:]]
+        for b in openbabel.OBMolBondIter(mol):
+            s1 = b.GetBeginAtom().GetId()
+            s2 = b.GetEndAtom().GetId()
+            bond[s1].append(s2)
+            bond[s2].append(s1)
         # connect molecules
         self._mols = connectmolecule(bond)
 
