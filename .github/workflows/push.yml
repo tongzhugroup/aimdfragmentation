@@ -6,9 +6,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@master
-    - name: Tox
-      uses: njzjz/actions/tox-conda@master
+    - uses: actions/setup-python@v1
+      with:
+        python-version: '3.7'
+        architecture: 'x64'
+    - run: pip install tox-conda
+    - run: git clone --depth 1 https://github.com/circulosmeos/gdown.pl
+      working-directory: /home/runner/work
+    - run: ./gdown.pl/gdown.pl $GAUSSIANURL "g16.tgz">/dev/null 2>&1
+      env:
+        GAUSSIANURL: ${{ secrets.GAUSSIANURL }}
+      working-directory: /home/runner/work
+    - run: tar -xzvf g16.tgz
+      working-directory: /home/runner/work
+    - run: tox
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
-        GAUSSIANURL: ${{ secrets.GAUSSIANURL }}
+        g16root: /home/runner/work

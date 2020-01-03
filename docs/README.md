@@ -1,22 +1,17 @@
 # Automated Fragmentation AIMD Calculation
 
+[![DOI:10.26434/chemrxiv.11462160](https://zenodo.org/badge/DOI/10.1039/C9CP05091D.svg)](https://doi.org/10.26434/chemrxiv.11462160)
 [![python version](https://img.shields.io/pypi/pyversions/aimdfragmentation.svg?logo=python&logoColor=white)](https://pypi.org/project/aimdfragmentation)
 [![PyPI](https://img.shields.io/pypi/v/aimdfragmentation.svg)](https://pypi.org/project/aimdfragmentation)
-[![Build Status](https://travis-ci.com/njzjz/aimdfragmentation.svg?branch=master)](https://travis-ci.com/njzjz/aimdfragmentation)
-[![Coverage Status](https://coveralls.io/repos/github/njzjz/aimdfragmentation/badge.svg?branch=master)](https://coveralls.io/github/njzjz/aimdfragmentation?branch=master)
 [![codecov](https://codecov.io/gh/njzjz/aimdfragmentation/branch/master/graph/badge.svg)](https://codecov.io/gh/njzjz/aimdfragmentation)
 
 A automated fragmentation method for Ab Initio Molecular Dynamics (AIMD).
 
+Combustion Driven by Fragment-based Ab Initio Molecular Dynamics Simulation, DOI: 10.26434/chemrxiv.11462160
+
 **Author**: Jinzhe Zeng
 
 **Email**: jzzeng@stu.ecnu.edu.cn
-
-## Requirements
-* [OpenBabel](https://github.com/openbabel/openbabel)
-* [numpy](https://github.com/numpy/numpy)
-* [ASE](https://gitlab.com/ase/ase)
-* [GaussianRunner](https://github.com/njzjz/GaussianRunner)
 
 ## Installation
 
