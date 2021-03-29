@@ -1,6 +1,6 @@
 # Automated Fragmentation AIMD Calculation
 
-[![DOI:10.26434/chemrxiv.11462160](https://zenodo.org/badge/DOI/10.1039/C9CP05091D.svg)](https://doi.org/10.26434/chemrxiv.11462160)
+[![DOI:10.26434/chemrxiv.11462160](https://zenodo.org/badge/DOI/10.26434/chemrxiv.11462160.svg)](https://doi.org/10.26434/chemrxiv.11462160)
 [![python version](https://img.shields.io/pypi/pyversions/aimdfragmentation.svg?logo=python&logoColor=white)](https://pypi.org/project/aimdfragmentation)
 [![PyPI](https://img.shields.io/pypi/v/aimdfragmentation.svg)](https://pypi.org/project/aimdfragmentation)
 [![codecov](https://codecov.io/gh/njzjz/aimdfragmentation/branch/master/graph/badge.svg)](https://codecov.io/gh/njzjz/aimdfragmentation)
