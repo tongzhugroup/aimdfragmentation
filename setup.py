@@ -17,7 +17,9 @@ if __name__ == '__main__':
           author='Jinzhe Zeng',
           author_email='jzzeng@stu.ecnu.edu.cn',
           install_requires=[
-              'numpy', 'gaussianrunner>=1.0.19', 'ase', 'coloredlogs'],
+              'numpy', 'gaussianrunner>=1.0.19', 'ase', 'coloredlogs',
+              'openbabel-wheel',
+          ],
           test_suite='aimdfragmentation.test',
           tests_require=tests_require,
           extras_require={

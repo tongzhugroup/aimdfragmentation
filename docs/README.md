@@ -18,19 +18,11 @@ Combustion Driven by Fragment-based Ab Initio Molecular Dynamics Simulation, DOI
 ### Using pip
 
 ```sh
-$ pip install aimdfragmentation
+pip install aimdfragmentation
 
 ```
 
-### Build from source
-
-You should install [Gaussian 16](http://gaussian.com/gaussian16/) and [OpenBabel](http://openbabel.org) first. Then:
-
-```sh
-git clone https://github.com/njzjz/aimdfragmentation
-cd aimdfragmentation/
-pip install .
-```
+You also need to install [Gaussian 16](http://gaussian.com/gaussian16/).
 
 ## Example
 

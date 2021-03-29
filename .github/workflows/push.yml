@@ -10,7 +10,7 @@ jobs:
       with:
         python-version: '3.7'
         architecture: 'x64'
-    - run: pip install tox-conda
+    - run: pip install tox
     - run: git clone --depth 1 https://github.com/circulosmeos/gdown.pl
       working-directory: /home/runner/work
     - run: ./gdown.pl/gdown.pl $GAUSSIANURL "g16.tgz">/dev/null 2>&1
@@ -22,5 +22,4 @@ jobs:
     - run: tox
       env:
         CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
-        COVERALLS_REPO_TOKEN: ${{ secrets.COVERALLS_REPO_TOKEN }}
         g16root: /home/runner/work
