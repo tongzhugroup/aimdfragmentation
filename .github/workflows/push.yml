@@ -1,4 +1,10 @@
-on: push
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - v*
+  pull_request:
 name: Test
 jobs:
   tox:
@@ -21,5 +27,4 @@ jobs:
       working-directory: /home/runner/work
     - run: tox
       env:
-        CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
         g16root: /home/runner/work
