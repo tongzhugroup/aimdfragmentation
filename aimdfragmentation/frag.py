@@ -16,7 +16,10 @@ from functools import partial
 from multiprocessing import Pool, cpu_count
 
 import numpy as np
-import openbabel
+try:
+  from openbabel import openbabel
+except ImportError:
+  import openbabel
 from ase.geometry import get_distances
 from ase.io import read as readxyz
 from gaussianrunner import GaussianAnalyst, GaussianRunner
