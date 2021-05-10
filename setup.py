@@ -9,7 +9,7 @@ if __name__ == '__main__':
     with open(path.join(this_directory, 'docs', 'README.md')) as f:
         long_description = f.read()
 
-    tests_require = ['pytest-sugar', 'pytest-cov']
+    tests_require = ['pytest-sugar', 'pytest-cov', 'fakegaussian>=0.0.2']
     setup(name='aimdfragmentation',
           description='AIMD Fragmentation Calculation',
           keywords="AIMD Fragmentation",
