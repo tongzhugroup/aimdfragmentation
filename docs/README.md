@@ -1,13 +1,13 @@
 # Automated Fragmentation AIMD Calculation
 
-[![DOI:10.26434/chemrxiv.11462160](https://zenodo.org/badge/DOI/10.26434/chemrxiv.11462160.svg)](https://doi.org/10.26434/chemrxiv.11462160)
+[![DOI:10.3390/molecules26113120](https://img.shields.io/badge/DOI-10.3390%2Fmolecules26113120-blue.svg)](https://doi.org/10.3390/molecules26113120)
 [![python version](https://img.shields.io/pypi/pyversions/aimdfragmentation.svg?logo=python&logoColor=white)](https://pypi.org/project/aimdfragmentation)
 [![PyPI](https://img.shields.io/pypi/v/aimdfragmentation.svg)](https://pypi.org/project/aimdfragmentation)
 [![codecov](https://codecov.io/gh/njzjz/aimdfragmentation/branch/master/graph/badge.svg)](https://codecov.io/gh/njzjz/aimdfragmentation)
 
 A automated fragmentation method for Ab Initio Molecular Dynamics (AIMD).
 
-Combustion Driven by Fragment-based Ab Initio Molecular Dynamics Simulation, DOI: 10.26434/chemrxiv.11462160
+Fragment-based Ab Initio Molecular Dynamics Simulation for Combustion, Molecules, 2021, 26 (11), 3120, DOI: [10.3390/molecules26113120](https://doi.org/10.3390/molecules26113120).
 
 **Author**: Jinzhe Zeng
 
